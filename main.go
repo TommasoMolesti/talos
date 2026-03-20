@@ -3,30 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
-func loadWorkflow(path string) (*Workflow, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var wf Workflow
-	err = yaml.Unmarshal(data, &wf)
-	if err != nil {
-		return nil, err
-	}
-
-	for name, task := range wf.Tasks {
-		task.Name = name
-	}
-
-	return &wf, nil
-}
-
+// main is the entry point of the Hepa CLI application.
+//
+// It parses CLI arguments and delegates workflow execution
+// to the RunWorkflow function. It handles user-facing errors
+// and command routing.
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: hepa <command>")
@@ -34,37 +17,20 @@ func main() {
 	}
 
 	switch os.Args[1] {
-		case "run":
-			wf, err := loadWorkflow("hepa.yaml")
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
+	case "run":
+		wf, err := loadWorkflow("hepa.yaml")
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 
-			PrintStart()
+		err = RunWorkflow(wf)
+		if err != nil {
+			fmt.Println("Execution failed:", err)
+			return
+		}
 
-			totalStart := time.Now()
-
-			for _, task := range wf.Tasks {
-				start := time.Now()
-
-				PrintTaskStart(task.Name, task.DependsOn)
-
-				err := runTask(task)
-
-				duration := time.Since(start).Seconds()
-
-				if err != nil {
-					PrintTaskFailure(task.Name, duration)
-					return
-				}
-
-				PrintTaskSuccess(task.Name, duration)
-			}
-
-			PrintEnd(time.Since(totalStart).Seconds())
-
-		default:
-			fmt.Println("Unknown command:", os.Args[1])
+	default:
+		fmt.Println("Unknown command:", os.Args[1])
 	}
 }
