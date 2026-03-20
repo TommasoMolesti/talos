@@ -1,29 +1,15 @@
 tasks:
-  setup:
-    command: "echo Setting up project"
+  A:
+    command: "echo A && sleep 1"
 
-  install:
-    command: "echo Installing dependencies"
+  B:
+    command: "echo B && sleep 2"
+    depends_on: ["A"]
 
-  db:
-    command: "echo Starting database"
+  C:
+    command: "echo C && sleep 2"
+    depends_on: ["A"]
 
-  migrate:
-    command: "echo Running migrations"
-    depends_on: ["db"]
-
-  seed:
-    command: "echo Seeding database"
-    depends_on: ["migrate"]
-
-  backend:
-    command: "echo Starting backend"
-    depends_on: ["install", "seed"]
-
-  frontend:
-    command: "echo Starting frontend"
-    depends_on: ["install"]
-
-  dev:
-    command: "echo 🚀 Dev environment ready!"
-    depends_on: ["backend", "frontend"]
+  D:
+    command: "echo D"
+    depends_on: ["B", "C"]

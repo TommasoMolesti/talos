@@ -5,7 +5,13 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	"sync"
 )
+
+// TaskExecutor defines a function that executes a task.
+//
+// This abstraction allows injecting custom behavior during testing.
+type TaskExecutor func(task *Task) error
 
 // runTask executes a single task command using the system shell.
 //
@@ -126,5 +132,93 @@ func RunWorkflow(wf *Workflow) error {
 
 	PrintEnd(time.Since(totalStart).Seconds())
 
+	return nil
+}
+
+// RunWorkflowParallel executes the workflow using the default shell-based executor.
+func RunWorkflowParallel(wf *Workflow) error {
+	return RunWorkflowParallelWithExecutor(wf, runTask)
+}
+
+// RunWorkflowParallelWithExecutor executes the workflow using a custom task executor.
+//
+// This is primarily used for testing to control task behavior.
+func RunWorkflowParallelWithExecutor(wf *Workflow, exec TaskExecutor) error {
+	_, err := resolveExecutionOrder(wf)
+	if err != nil {
+		return err
+	}
+
+	PrintStart()
+	totalStart := time.Now()
+
+	inDegree := make(map[string]int)
+	dependents := make(map[string][]string)
+
+	for name, task := range wf.Tasks {
+		inDegree[name] = len(task.DependsOn)
+		for _, dep := range task.DependsOn {
+			dependents[dep] = append(dependents[dep], name)
+		}
+	}
+
+	var wg sync.WaitGroup
+	done := make(chan string)
+	errChan := make(chan error, 1)
+
+	remainingTasks := len(wf.Tasks)
+
+	run := func(task *Task) {
+		defer wg.Done()
+
+		start := time.Now()
+		PrintTaskStart(task.Name, task.DependsOn)
+
+		err := exec(task)
+
+		duration := time.Since(start).Seconds()
+
+		if err != nil {
+			PrintTaskFailure(task.Name, duration)
+			select {
+			case errChan <- err:
+			default:
+			}
+			return
+		}
+
+		PrintTaskSuccess(task.Name, duration)
+		done <- task.Name
+	}
+
+	for name, count := range inDegree {
+		if count == 0 {
+			wg.Add(1)
+			go run(wf.Tasks[name])
+		}
+	}
+
+	for remainingTasks > 0 {
+		select {
+		case finished := <-done:
+			remainingTasks--
+
+			for _, dep := range dependents[finished] {
+				inDegree[dep]--
+				if inDegree[dep] == 0 {
+					wg.Add(1)
+					go run(wf.Tasks[dep])
+				}
+			}
+
+		case err := <-errChan:
+			wg.Wait()
+			return err
+		}
+	}
+
+	wg.Wait()
+
+	PrintEnd(time.Since(totalStart).Seconds())
 	return nil
 }

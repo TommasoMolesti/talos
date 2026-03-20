@@ -24,7 +24,7 @@ func main() {
 			return
 		}
 
-		err = RunWorkflow(wf)
+		err = RunWorkflowParallel(wf)
 		if err != nil {
 			fmt.Println("Execution failed:", err)
 			return
