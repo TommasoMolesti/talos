@@ -15,7 +15,7 @@ var (
 
 // PrintStart prints the initial message indicating that workflow execution has started.
 func PrintStart() {
-	fmt.Println(info("[hepa] Starting workflow...\n"))
+	fmt.Println(info("[talos] Starting workflow...\n"))
 }
 
 // PrintTaskStart prints the header for a task before execution.
@@ -50,5 +50,5 @@ func PrintTaskFailure(name string, duration float64) {
 // PrintEnd prints the final message after workflow execution completes,
 // including the total execution time.
 func PrintEnd(total float64) {
-	fmt.Printf("%s Done in %.2fs\n", info("[hepa]"), total)
+	fmt.Printf("%s Done in %.2fs\n", info("[talos]"), total)
 }
