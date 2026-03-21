@@ -34,3 +34,60 @@ func loadWorkflow(path string) (*Workflow, error) {
 
 	return &wf, nil
 }
+
+// validateExecutionOrder computes a valid execution order for all tasks in the workflow.
+//
+// It ensures that:
+// - each task is executed after its dependencies
+// - all dependencies exist
+// - no cyclic dependencies are present
+//
+// It returns an error if validation fails.
+func validateExecutionOrder(wf *Workflow) (error) {
+	visited := make(map[string]bool)
+	visiting := make(map[string]bool)
+
+	var visit func(string) error
+
+	visit = func(name string) error {
+		// detect cycle
+		if visiting[name] {
+			return fmt.Errorf("cycle detected at task: %s", name)
+		}
+
+		// already processed
+		if visited[name] {
+			return nil
+		}
+
+		task, exists := wf.Tasks[name]
+		if !exists {
+			return fmt.Errorf("task not found: %s", name)
+		}
+
+		visiting[name] = true
+
+		// visit dependencies first
+		for _, dep := range task.DependsOn {
+			if _, ok := wf.Tasks[dep]; !ok {
+				return fmt.Errorf("task %s depends on unknown task %s", name, dep)
+			}
+			if err := visit(dep); err != nil {
+				return err
+			}
+		}
+
+		visiting[name] = false
+		visited[name] = true
+
+		return nil
+	}
+
+	for name := range wf.Tasks {
+		if err := visit(name); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

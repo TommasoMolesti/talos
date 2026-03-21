@@ -8,7 +8,7 @@ import (
 // main is the entry point of the Talos CLI application.
 //
 // It parses CLI arguments and delegates workflow execution
-// to the RunWorkflow function. It handles user-facing errors
+// to the RunWorkflowParallel function. It handles user-facing errors
 // and command routing.
 func main() {
 	if len(os.Args) < 2 {
