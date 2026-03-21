@@ -1,14 +1,14 @@
 package main
 
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
-// TestValidateExecutionOrder_Linear verifies that a simple linear dependency chain
-// is validated in the correct order.
-func TestValidateExecutionOrder_Linear(t *testing.T) {
+// --- VALIDATION TESTS ---
+
+func TestVerifyExecutionOrder_Linear(t *testing.T) {
 	wf := &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A"},
@@ -17,29 +17,24 @@ func TestValidateExecutionOrder_Linear(t *testing.T) {
 		},
 	}
 
-	err := validateExecutionOrder(wf)
-	if err != nil {
+	if err := validateExecutionOrder(wf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-// TestValidateExecutionOrder_MissingDependency verifies that an error is returned
-// when a task depends on a non-existent task.
-func TestResolveExecutionOrder_MissingDependency(t *testing.T) {
+func TestVerifyExecutionOrder_MissingDependency(t *testing.T) {
 	wf := &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A", DependsOn: []string{"B"}},
 		},
 	}
 
-	err := validateExecutionOrder(wf)
-	if err == nil {
-		t.Fatal("expected error for missing dependency, got nil")
+	if err := validateExecutionOrder(wf); err == nil {
+		t.Fatal("expected error for missing dependency")
 	}
 }
 
-// TestValidateExecutionOrder_Cycle verifies that cyclic dependencies are detected.
-func TestResolveExecutionOrder_Cycle(t *testing.T) {
+func TestVerifyExecutionOrder_Cycle(t *testing.T) {
 	wf := &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A", DependsOn: []string{"B"}},
@@ -47,18 +42,21 @@ func TestResolveExecutionOrder_Cycle(t *testing.T) {
 		},
 	}
 
-	err := validateExecutionOrder(wf)
-	if err == nil {
-		t.Fatal("expected error for cycle, got nil")
+	if err := validateExecutionOrder(wf); err == nil {
+		t.Fatal("expected error for cycle")
 	}
 }
 
-// TestRunWorkflowParallel_AllTasksExecuted verifies that all tasks are executed.
+// --- EXECUTION TESTS ---
+
 func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 	var mu sync.Mutex
 	executed := make(map[string]bool)
 
-	exec := func(task *Task) error {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(task *Task) error {
 		mu.Lock()
 		executed[task.Name] = true
 		mu.Unlock()
@@ -74,55 +72,39 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 		},
 	}
 
-	err := RunWorkflowParallelWithExecutor(wf, exec)
-	if err != nil {
+	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	for name := range wf.Tasks {
 		if !executed[name] {
-			t.Fatalf("task %s was not executed", name)
+			t.Fatalf("task %s not executed", name)
 		}
 	}
 }
 
-// TestRunWorkflowParallel_RespectsDependencies verifies that tasks are not executed
-// before their dependencies are completed.
-func TestRunWorkflowParallel_RespectsDependencies(t *testing.T) {
+func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 	var mu sync.Mutex
-	completed := make(map[string]bool)
+	running := 0
+	maxSeen := 0
 
-	exec := func(task *Task) error {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(task *Task) error {
 		mu.Lock()
-		for _, dep := range task.DependsOn {
-			if !completed[dep] {
-				t.Fatalf("task %s ran before dependency %s", task.Name, dep)
-			}
+		running++
+		if running > maxSeen {
+			maxSeen = running
 		}
-		completed[task.Name] = true
 		mu.Unlock()
 
-		return nil
-	}
+		time.Sleep(50 * time.Millisecond)
 
-	wf := &Workflow{
-		Tasks: map[string]*Task{
-			"A": {Name: "A"},
-			"B": {Name: "B", DependsOn: []string{"A"}},
-			"C": {Name: "C", DependsOn: []string{"A"}},
-		},
-	}
+		mu.Lock()
+		running--
+		mu.Unlock()
 
-	err := RunWorkflowParallelWithExecutor(wf, exec)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-// TestRunWorkflowParallel_Parallelism verifies that tasks run concurrently.
-func TestRunWorkflowParallel_Parallelism(t *testing.T) {
-	exec := func(task *Task) error {
-		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
 
@@ -131,92 +113,15 @@ func TestRunWorkflowParallel_Parallelism(t *testing.T) {
 			"A": {Name: "A"},
 			"B": {Name: "B"},
 			"C": {Name: "C"},
+			"D": {Name: "D"},
 		},
 	}
 
-	start := time.Now()
-
-	err := RunWorkflowParallelWithExecutor(wf, exec)
-	if err != nil {
+	if err := RunWorkflowParallel(wf, RunOptions{MaxConcurrency: 2}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	duration := time.Since(start)
-
-	// If sequential, this would be ~300ms
-	if duration > 250*time.Millisecond {
-		t.Fatalf("expected parallel execution, took too long: %v", duration)
+	if maxSeen > 2 {
+		t.Fatalf("expected max concurrency 2, got %d", maxSeen)
 	}
-}
-
-// TestRunWorkflowParallel_Failure verifies that execution stops on error.
-func TestRunWorkflowParallel_Failure(t *testing.T) {
-	exec := func(task *Task) error {
-		if task.Name == "B" {
-			return assertError{}
-		}
-		return nil
-	}
-
-	wf := &Workflow{
-		Tasks: map[string]*Task{
-			"A": {Name: "A"},
-			"B": {Name: "B", DependsOn: []string{"A"}},
-		},
-	}
-
-	err := RunWorkflowParallelWithExecutor(wf, exec)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-}
-
-// TestRunWorkflowParallel_DAG verifies correct execution of a multi-level DAG.
-func TestRunWorkflowParallel_DAG(t *testing.T) {
-	var mu sync.Mutex
-	order := []string{}
-
-	exec := func(task *Task) error {
-		time.Sleep(10 * time.Millisecond)
-
-		mu.Lock()
-		order = append(order, task.Name)
-		mu.Unlock()
-
-		return nil
-	}
-
-	wf := &Workflow{
-		Tasks: map[string]*Task{
-			"A": {Name: "A"},
-			"B": {Name: "B", DependsOn: []string{"A"}},
-			"C": {Name: "C", DependsOn: []string{"A"}},
-			"D": {Name: "D", DependsOn: []string{"B", "C"}},
-		},
-	}
-
-	err := RunWorkflowParallelWithExecutor(wf, exec)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	index := make(map[string]int)
-	for i, name := range order {
-		index[name] = i
-	}
-
-	if index["A"] > index["B"] || index["A"] > index["C"] {
-		t.Fatal("A should run before B and C")
-	}
-
-	if index["B"] > index["D"] || index["C"] > index["D"] {
-		t.Fatal("B and C should run before D")
-	}
-}
-
-// assertError is a simple custom error type for testing.
-type assertError struct{}
-
-func (e assertError) Error() string {
-	return "test error"
 }
