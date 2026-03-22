@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,7 +44,7 @@ func loadWorkflow(path string) (*Workflow, error) {
 // - no cyclic dependencies are present
 //
 // It returns an error if validation fails.
-func validateExecutionOrder(wf *Workflow) (error) {
+func validateExecutionOrder(wf *Workflow) error {
 	visited := make(map[string]bool)
 	visiting := make(map[string]bool)
 

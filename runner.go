@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"os/exec"
 	"strings"
 	"sync"
@@ -14,9 +16,14 @@ type RunOptions struct {
 	MaxConcurrency int
 }
 
+type taskResult struct {
+	name string
+	err  error
+}
+
 // runTask executes a single task command using the system shell.
-var runTask = func(task *Task) error {
-	cmd := exec.Command("sh", "-c", task.Command)
+var runTask = func(ctx context.Context, task *Task) error {
+	cmd := exec.CommandContext(ctx, "sh", "-c", task.Command)
 
 	output, err := cmd.CombinedOutput()
 
@@ -49,11 +56,14 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		}
 	}
 
-	var wg sync.WaitGroup
-	done := make(chan string)
-	errChan := make(chan error, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	remaining := len(wf.Tasks)
+	var wg sync.WaitGroup
+	results := make(chan taskResult, len(wf.Tasks))
+	started := 0
+	completed := 0
+	var firstErr error
 
 	var sem chan struct{}
 	if opts.MaxConcurrency > 0 {
@@ -64,57 +74,80 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		defer wg.Done()
 
 		if sem != nil {
-			sem <- struct{}{}
-			defer func() { <-sem }()
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			case <-ctx.Done():
+				results <- taskResult{name: task.Name, err: ctx.Err()}
+				return
+			}
+		}
+
+		if ctx.Err() != nil {
+			results <- taskResult{name: task.Name, err: ctx.Err()}
+			return
 		}
 
 		start := time.Now()
 		PrintTaskStart(task.Name, task.DependsOn)
 
-		err := runTask(task)
+		err := runTask(ctx, task)
 
 		duration := time.Since(start).Seconds()
 
 		if err != nil {
-			PrintTaskFailure(task.Name, duration)
-			select {
-			case errChan <- err:
-			default:
+			if errors.Is(err, context.Canceled) {
+				PrintTaskCanceled(task.Name, duration)
+			} else {
+				PrintTaskFailure(task.Name, duration)
 			}
+			results <- taskResult{name: task.Name, err: err}
 			return
 		}
 
 		PrintTaskSuccess(task.Name, duration)
-		done <- task.Name
+		results <- taskResult{name: task.Name}
+	}
+
+	startTask := func(name string) {
+		if ctx.Err() != nil {
+			return
+		}
+		wg.Add(1)
+		started++
+		go run(wf.Tasks[name])
 	}
 
 	for name, count := range inDegree {
 		if count == 0 {
-			wg.Add(1)
-			go run(wf.Tasks[name])
+			startTask(name)
 		}
 	}
 
-	for remaining > 0 {
-		select {
-		case finished := <-done:
-			remaining--
+	for completed < started {
+		result := <-results
+		completed++
 
-			for _, dep := range dependents[finished] {
-				inDegree[dep]--
-				if inDegree[dep] == 0 {
-					wg.Add(1)
-					go run(wf.Tasks[dep])
-				}
+		if result.err != nil {
+			if firstErr == nil && !errors.Is(result.err, context.Canceled) {
+				firstErr = result.err
+				cancel()
 			}
+			continue
+		}
 
-		case err := <-errChan:
-			wg.Wait()
-			return err
+		for _, dep := range dependents[result.name] {
+			inDegree[dep]--
+			if inDegree[dep] == 0 {
+				startTask(dep)
+			}
 		}
 	}
 
 	wg.Wait()
+	if firstErr != nil {
+		return firstErr
+	}
 	PrintEnd(time.Since(startTotal).Seconds())
 
 	return nil

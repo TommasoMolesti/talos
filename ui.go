@@ -10,6 +10,7 @@ var (
 	info = color.New(color.FgCyan).SprintFunc()
 	run  = color.New(color.FgYellow).SprintFunc()
 	ok   = color.New(color.FgGreen).SprintFunc()
+	skip = color.New(color.FgHiBlack).SprintFunc()
 	fail = color.New(color.FgRed).SprintFunc()
 )
 
@@ -45,6 +46,12 @@ func PrintTaskSuccess(name string, duration float64) {
 // including its execution duration in seconds.
 func PrintTaskFailure(name string, duration float64) {
 	fmt.Printf("%s %s (%.2fs)\n\n", fail("✖"), name, duration)
+}
+
+// PrintTaskCanceled prints a cancellation message for a task,
+// including its execution duration in seconds.
+func PrintTaskCanceled(name string, duration float64) {
+	fmt.Printf("%s %s (%.2fs)\n\n", skip("◌"), name, duration)
 }
 
 // PrintEnd prints the final message after workflow execution completes,

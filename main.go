@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 )
 
 // main is the entry point of the Talos CLI application.
@@ -11,40 +11,52 @@ import (
 // It parses CLI arguments and delegates workflow execution
 // to the RunWorkflowParallel function.
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: talos <command>")
-		return
+	os.Exit(runCLI(os.Args[1:]))
+}
+
+func runCLI(args []string) int {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "Usage: talos <command>")
+		return 1
 	}
 
-	switch os.Args[1] {
+	switch args[0] {
 	case "run":
-		runCmd(os.Args[2:])
-
+		if err := runCmd(args[1:]); err != nil {
+			if err == flag.ErrHelp {
+				return 0
+			}
+			fmt.Fprintln(os.Stderr, "Execution failed:", err)
+			return 1
+		}
+		return 0
 	default:
-		fmt.Println("Unknown command:", os.Args[1])
+		fmt.Fprintln(os.Stderr, "Unknown command:", args[0])
+		return 1
 	}
 }
 
 // runCmd handles the "run" command and its flags.
-func runCmd(args []string) {
+func runCmd(args []string) error {
 	// Create a new flag set for the run command
-	fs := flag.NewFlagSet("run", flag.ExitOnError)
+	fs := flag.NewFlagSet("run", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
 
 	// Define flags
 	maxConcurrency := fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
 
 	// Parse flags
-	err := fs.Parse(args)
-	if err != nil {
-		fmt.Println("Error parsing flags:", err)
-		return
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return err
+		}
+		return fmt.Errorf("parse flags: %w", err)
 	}
 
 	// Load workflow
 	wf, err := loadWorkflow("talos.yaml")
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return fmt.Errorf("load workflow: %w", err)
 	}
 
 	// Run with options
@@ -52,9 +64,5 @@ func runCmd(args []string) {
 		MaxConcurrency: *maxConcurrency,
 	}
 
-	err = RunWorkflowParallel(wf, opts)
-	if err != nil {
-		fmt.Println("Execution failed:", err)
-		return
-	}
+	return RunWorkflowParallel(wf, opts)
 }

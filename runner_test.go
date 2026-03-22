@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -56,7 +58,7 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 	orig := runTask
 	defer func() { runTask = orig }()
 
-	runTask = func(task *Task) error {
+	runTask = func(_ context.Context, task *Task) error {
 		mu.Lock()
 		executed[task.Name] = true
 		mu.Unlock()
@@ -91,7 +93,7 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 	orig := runTask
 	defer func() { runTask = orig }()
 
-	runTask = func(task *Task) error {
+	runTask = func(_ context.Context, task *Task) error {
 		mu.Lock()
 		running++
 		if running > maxSeen {
@@ -123,5 +125,80 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 
 	if maxSeen > 2 {
 		t.Fatalf("expected max concurrency 2, got %d", maxSeen)
+	}
+}
+
+func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		if task.Name == "fail" {
+			time.Sleep(10 * time.Millisecond)
+			return errors.New("boom")
+		}
+
+		time.Sleep(30 * time.Millisecond)
+		return nil
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"fail":    {Name: "fail"},
+			"succeed": {Name: "succeed"},
+		},
+	}
+
+	start := time.Now()
+	err := RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	if time.Since(start) > 200*time.Millisecond {
+		t.Fatal("workflow took too long, possible deadlock")
+	}
+}
+
+func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	var mu sync.Mutex
+	canceled := make(map[string]bool)
+
+	runTask = func(ctx context.Context, task *Task) error {
+		if task.Name == "fail" {
+			time.Sleep(10 * time.Millisecond)
+			return errors.New("boom")
+		}
+
+		select {
+		case <-ctx.Done():
+			mu.Lock()
+			canceled[task.Name] = true
+			mu.Unlock()
+			return ctx.Err()
+		case <-time.After(200 * time.Millisecond):
+			return nil
+		}
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"fail": {Name: "fail"},
+			"slow": {Name: "slow"},
+		},
+	}
+
+	err := RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if !canceled["slow"] {
+		t.Fatal("expected slow task to be canceled")
 	}
 }

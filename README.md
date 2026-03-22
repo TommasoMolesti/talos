@@ -1,38 +1,50 @@
-# 🤖 Talos
-
+# Talos
 
 **Talos** is a lightweight, local-first workflow engine designed to execute task pipelines directly on your machine.
 
 It allows you to define workflows as a set of tasks with dependencies, forming a **Directed Acyclic Graph (DAG)**. Talos resolves execution order automatically and runs tasks efficiently, executing independent tasks in parallel.
 
-The goal of Talos is to provide a simple, portable alternative to heavier orchestration tools—without requiring any external infrastructure.
+The goal of Talos is to provide a simple, portable alternative to heavier orchestration tools without requiring any external infrastructure.
 
 ---
 
-## 🏛️ Why Talos?
+## Why Talos?
 
 In Greek mythology, **Talos** was a giant bronze automaton—the first "robot"—created to protect the island of Crete. Like its namesake, this tool is a self-operating, local-first engine. It doesn't rely on external clouds or complex clusters; it is an autonomous guardian of your workflows, running entirely on your machine to execute tasks with mechanical precision and speed.
 
----
+## Features
 
-## ✨ Features
+- **Local-first execution:** No servers, no clusters, just your machine.
+- **Zero setup:** A single binary is all you need.
+- **YAML-based configuration:** Simple, readable workflow definitions.
+- **Dependency-aware:** Smart execution based on task relationships.
+- **Parallel execution:** Runs independent tasks concurrently to save time.
+- **Best-effort fail-fast behavior:** Stops scheduling new tasks and cancels running commands when a task fails.
+- **Clean CLI output:** Real-time updates on your pipeline's progress.
 
--   **Local-first execution:** No servers, no clusters, just your machine.
--   **Zero setup:** A single binary is all you need.
--   **YAML-based configuration:** Simple, readable workflow definitions.
--   **Dependency-aware:** Smart execution based on task relationships.
--   **Parallel execution:** Runs independent tasks concurrently to save time.
--   **Fail-fast behavior:** Stops execution early if a critical task fails.
--   **Clean CLI output:** Real-time updates on your pipeline's progress.
+## Quick Start
 
+Build the binary:
 
-------------------------------------------------------------------------
+```bash
+go build -o talos .
+```
 
-## 🚀 Quick Start
+Run the sample workflow in this repository:
+
+```bash
+./talos run
+```
+
+Limit parallelism:
+
+```bash
+./talos run --max-concurrency 2
+```
 
 ### Create a workflow
 
-``` yaml
+```yaml
 tasks:
   install:
     command: "npm install"
@@ -49,9 +61,9 @@ tasks:
     depends_on: ["install", "migrate"]
 ```
 
-------------------------------------------------------------------------
+By default, Talos looks for `talos.yaml` in the current directory.
 
-## 🧠 How it works
+## How It Works
 
 Talos parses your workflow into a Directed Acyclic Graph (DAG):
 
@@ -64,25 +76,31 @@ Example:
 A → B, C → D
 
 Execution:
+
 1. A runs first
 2. B and C run in parallel
 3. D runs after both B and C complete
 
-------------------------------------------------------------------------
+## Architecture Notes
 
-## 🧪 Testing
+Talos is intentionally small, but it still shows a few useful Go design ideas:
 
-``` bash
+- `loadWorkflow` parses YAML and normalizes task names.
+- `validateExecutionOrder` checks for missing dependencies and cycles before any command starts.
+- `RunWorkflowParallel` uses dependency counts plus a result loop to schedule ready tasks and unlock dependents as tasks finish.
+- Command execution uses `exec.CommandContext`, so a failing task can cancel other running commands.
+
+This keeps the code easy to follow while still demonstrating concurrency, graph traversal, and CLI design.
+
+## Testing
+
+```bash
 go test ./...
 ```
 
-------------------------------------------------------------------------
+## Roadmap
 
-## 🚧 Roadmap
-
--   concurrency limits
--   cancellation
--   dry-run mode
--   visualization
-
-------------------------------------------------------------------------
+- dry-run mode
+- visualization
+- custom workflow file path
+- retries and timeouts
