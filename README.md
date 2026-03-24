@@ -127,3 +127,10 @@ go test ./...
 ```
 
 ## Roadmap
+
+- `validate` command for config-only checks
+- `--target <task>` to run only part of a workflow
+- per-task `cwd` and `env` support
+- richer `--help` output and command guidance
+- shell tab completion for commands and flags
+- final execution summary with retries, timeouts, and skips
