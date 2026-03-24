@@ -20,6 +20,7 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 - **Dependency-aware:** Smart execution based on task relationships.
 - **Parallel execution:** Runs independent tasks concurrently to save time.
 - **Dry-run mode:** Prints the execution plan without touching your system.
+- **Per-task timeouts:** Cancel tasks that run longer than expected.
 - **Best-effort fail-fast behavior:** Stops scheduling new tasks and cancels running commands when a task fails.
 - **Clean CLI output:** Real-time updates on your pipeline's progress.
 
@@ -68,6 +69,7 @@ tasks:
   migrate:
     command: "npm run migrate"
     depends_on: ["db"]
+    timeout: "30s"
 
   dev:
     command: "npm run dev"
@@ -76,6 +78,7 @@ tasks:
 
 By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
 Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
+Use `timeout` on a task to fail fast when a command exceeds its expected runtime.
 
 ## How It Works
 
@@ -102,7 +105,7 @@ Talos is intentionally small, but it still shows a few useful Go design ideas:
 - `loadWorkflow` parses YAML and normalizes task names.
 - `validateExecutionOrder` checks for missing dependencies and cycles before any command starts.
 - `RunWorkflowParallel` uses dependency counts plus a result loop to schedule ready tasks and unlock dependents as tasks finish.
-- Command execution uses `exec.CommandContext`, so a failing task can cancel other running commands.
+- Command execution uses `exec.CommandContext`, so a failing or timed-out task can cancel other running commands.
 
 This keeps the code easy to follow while still demonstrating concurrency, graph traversal, and CLI design.
 
@@ -115,4 +118,4 @@ go test ./...
 ## Roadmap
 
 - visualization
-- retries and timeouts
+- retries

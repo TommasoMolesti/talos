@@ -269,3 +269,37 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 		t.Fatalf("expected stage 3 output, got %q", output)
 	}
 }
+
+func TestRunWorkflowParallel_TaskTimeoutFailsWorkflow(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(ctx context.Context, task *Task) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+			return nil
+		}
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"slow": {Name: "slow", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
+		},
+	}
+
+	err := RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+
+	var timeoutErr taskTimeoutError
+	if !errors.As(err, &timeoutErr) {
+		t.Fatalf("expected taskTimeoutError, got %T", err)
+	}
+
+	if timeoutErr.task != "slow" {
+		t.Fatalf("expected timeout on slow task, got %q", timeoutErr.task)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
@@ -138,5 +139,41 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 
 	if !gotOptions.DryRun {
 		t.Fatal("expected dry run to be true")
+	}
+}
+
+func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "timeout.yaml")
+	data := "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: \"25ms\"\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	wf, err := loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if wf.Tasks["slow"].TimeoutDuration != 25*time.Millisecond {
+		t.Fatalf("expected timeout duration 25ms, got %s", wf.Tasks["slow"].TimeoutDuration)
+	}
+}
+
+func TestLoadWorkflow_RejectsInvalidTaskTimeout(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "invalid-timeout.yaml")
+	data := "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: \"soon\"\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err := loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected invalid timeout error")
+	}
+
+	if !strings.Contains(err.Error(), "invalid timeout") {
+		t.Fatalf("expected invalid timeout error, got %v", err)
 	}
 }

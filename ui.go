@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -65,6 +66,12 @@ func PrintTaskFailure(name string, duration float64) {
 // including its execution duration in seconds.
 func PrintTaskCanceled(name string, duration float64) {
 	fmt.Printf("%s %s (%.2fs)\n\n", skip("◌"), name, duration)
+}
+
+// PrintTaskTimeout prints a timeout message for a task,
+// including its execution duration and timeout limit.
+func PrintTaskTimeout(name string, duration float64, timeout time.Duration) {
+	fmt.Printf("%s %s (%.2fs, timeout %s)\n\n", fail("⌛"), name, duration, timeout)
 }
 
 // PrintEnd prints the final message after workflow execution completes,

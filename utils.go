@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,6 +32,16 @@ func loadWorkflow(path string) (*Workflow, error) {
 
 	for name, task := range wf.Tasks {
 		task.Name = name
+		if task.Timeout != "" {
+			duration, err := time.ParseDuration(task.Timeout)
+			if err != nil {
+				return nil, fmt.Errorf("task %s has invalid timeout %q: %w", name, task.Timeout, err)
+			}
+			if duration <= 0 {
+				return nil, fmt.Errorf("task %s timeout must be greater than zero", name)
+			}
+			task.TimeoutDuration = duration
+		}
 	}
 
 	return &wf, nil

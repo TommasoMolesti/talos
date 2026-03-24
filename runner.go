@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os/exec"
 	"sort"
 	"strings"
@@ -22,6 +23,15 @@ type RunOptions struct {
 type taskResult struct {
 	name string
 	err  error
+}
+
+type taskTimeoutError struct {
+	task    string
+	timeout time.Duration
+}
+
+func (e taskTimeoutError) Error() string {
+	return fmt.Sprintf("task %s timed out after %s", e.task, e.timeout)
 }
 
 // runTask executes a single task command using the system shell.
@@ -100,14 +110,26 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 			return
 		}
 
+		taskCtx := ctx
+		var cancelTask context.CancelFunc
+		if task.TimeoutDuration > 0 {
+			taskCtx, cancelTask = context.WithTimeout(ctx, task.TimeoutDuration)
+			defer cancelTask()
+		}
+
 		start := time.Now()
 		PrintTaskStart(task.Name, task.DependsOn)
 
-		err := runTask(ctx, task)
+		err := runTask(taskCtx, task)
 
 		duration := time.Since(start).Seconds()
 
 		if err != nil {
+			if task.TimeoutDuration > 0 && errors.Is(taskCtx.Err(), context.DeadlineExceeded) {
+				PrintTaskTimeout(task.Name, duration, task.TimeoutDuration)
+				results <- taskResult{name: task.Name, err: taskTimeoutError{task: task.Name, timeout: task.TimeoutDuration}}
+				return
+			}
 			if errors.Is(err, context.Canceled) {
 				PrintTaskCanceled(task.Name, duration)
 			} else {
