@@ -32,6 +32,9 @@ func loadWorkflow(path string) (*Workflow, error) {
 
 	for name, task := range wf.Tasks {
 		task.Name = name
+		if task.Retries < 0 {
+			return nil, fmt.Errorf("task %s retries must be zero or greater", name)
+		}
 		if task.Timeout != "" {
 			duration, err := time.ParseDuration(task.Timeout)
 			if err != nil {

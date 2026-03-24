@@ -303,3 +303,57 @@ func TestRunWorkflowParallel_TaskTimeoutFailsWorkflow(t *testing.T) {
 		t.Fatalf("expected timeout on slow task, got %q", timeoutErr.task)
 	}
 }
+
+func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	attempts := 0
+	runTask = func(_ context.Context, task *Task) error {
+		attempts++
+		if attempts < 3 {
+			return errors.New("transient failure")
+		}
+		return nil
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
+		},
+	}
+
+	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if attempts != 3 {
+		t.Fatalf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	attempts := 0
+	runTask = func(_ context.Context, task *Task) error {
+		attempts++
+		return errors.New("still failing")
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
+		},
+	}
+
+	err := RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	if attempts != 3 {
+		t.Fatalf("expected 3 attempts, got %d", attempts)
+	}
+}

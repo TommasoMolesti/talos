@@ -5,10 +5,12 @@ tasks:
   B:
     command: "echo B && sleep 2"
     depends_on: ["A"]
+    timeout: "10s"
 
   C:
     command: "echo C && sleep 2"
     depends_on: ["A"]
+    retries: 3
 
   D:
     command: "echo D"

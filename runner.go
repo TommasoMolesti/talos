@@ -120,7 +120,21 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		start := time.Now()
 		PrintTaskStart(task.Name, task.DependsOn)
 
-		err := runTask(taskCtx, task)
+		maxAttempts := task.Retries + 1
+		var err error
+		for attempt := 1; attempt <= maxAttempts; attempt++ {
+			err = runTask(taskCtx, task)
+			if err == nil {
+				break
+			}
+			if task.TimeoutDuration > 0 && errors.Is(taskCtx.Err(), context.DeadlineExceeded) {
+				break
+			}
+			if errors.Is(err, context.Canceled) || attempt == maxAttempts {
+				break
+			}
+			PrintTaskRetry(task.Name, attempt+1, maxAttempts, err)
+		}
 
 		duration := time.Since(start).Seconds()
 

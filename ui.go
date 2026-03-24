@@ -44,6 +44,11 @@ func PrintTaskStart(name string, deps []string) {
 	}
 }
 
+// PrintTaskRetry prints a retry message before a new attempt begins.
+func PrintTaskRetry(name string, attempt int, maxAttempts int, err error) {
+	fmt.Printf("%s %s retry %d/%d after error: %v\n", run("↻"), name, attempt, maxAttempts, err)
+}
+
 // PrintTaskOutputLine prints a single line of task output,
 // formatted with indentation to distinguish it from system logs.
 func PrintTaskOutputLine(line string) {

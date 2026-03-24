@@ -177,3 +177,21 @@ func TestLoadWorkflow_RejectsInvalidTaskTimeout(t *testing.T) {
 		t.Fatalf("expected invalid timeout error, got %v", err)
 	}
 }
+
+func TestLoadWorkflow_RejectsNegativeRetries(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "invalid-retries.yaml")
+	data := "tasks:\n  flaky:\n    command: \"echo nope\"\n    retries: -1\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err := loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected invalid retries error")
+	}
+
+	if !strings.Contains(err.Error(), "retries must be zero or greater") {
+		t.Fatalf("expected retries validation error, got %v", err)
+	}
+}
