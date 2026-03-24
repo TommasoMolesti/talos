@@ -71,7 +71,7 @@ tasks:
     command: "npm run migrate"
     retries: 2
     depends_on: ["db"]
-    timeout: "30s"
+    timeout: 30
 
   dev:
     command: "npm run dev"
@@ -81,7 +81,7 @@ tasks:
 By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
 Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
 Use `retries` on a task to retry transient failures before Talos gives up.
-Use `timeout` on a task to fail fast when a command exceeds its expected runtime.
+Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
 
 ## How It Works
 

@@ -35,15 +35,11 @@ func loadWorkflow(path string) (*Workflow, error) {
 		if task.Retries < 0 {
 			return nil, fmt.Errorf("task %s retries must be zero or greater", name)
 		}
-		if task.Timeout != "" {
-			duration, err := time.ParseDuration(task.Timeout)
-			if err != nil {
-				return nil, fmt.Errorf("task %s has invalid timeout %q: %w", name, task.Timeout, err)
-			}
-			if duration <= 0 {
-				return nil, fmt.Errorf("task %s timeout must be greater than zero", name)
-			}
-			task.TimeoutDuration = duration
+		if task.TimeoutSeconds < 0 {
+			return nil, fmt.Errorf("task %s timeout must be zero or greater", name)
+		}
+		if task.TimeoutSeconds > 0 {
+			task.TimeoutDuration = time.Duration(task.TimeoutSeconds) * time.Second
 		}
 	}
 

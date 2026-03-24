@@ -252,11 +252,11 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 	}
 
 	stdout, restore := captureStdout(t)
-	defer restore()
-
 	if err := RunWorkflowParallel(wf, RunOptions{DryRun: true}); err != nil {
+		restore()
 		t.Fatalf("unexpected error: %v", err)
 	}
+	restore()
 
 	output := stdout.String()
 	if !strings.Contains(output, "Stage 1: A") {

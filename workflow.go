@@ -13,7 +13,7 @@ type Task struct {
 	Command         string        `yaml:"command"`
 	DependsOn       []string      `yaml:"depends_on"`
 	Retries         int           `yaml:"retries"`
-	Timeout         string        `yaml:"timeout"`
+	TimeoutSeconds  int           `yaml:"timeout"`
 	TimeoutDuration time.Duration `yaml:"-"`
 }
 
