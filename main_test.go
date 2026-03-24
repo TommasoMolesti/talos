@@ -38,6 +38,34 @@ func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
 	return exitCode, buf.String()
 }
 
+func runCLIWithCapturedStdout(t *testing.T, args []string) (int, string) {
+	t.Helper()
+
+	orig := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+
+	os.Stdout = w
+	buf := &bytes.Buffer{}
+
+	done := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(buf, r)
+		close(done)
+	}()
+
+	exitCode := runCLI(args)
+
+	_ = w.Close()
+	os.Stdout = orig
+	<-done
+	_ = r.Close()
+
+	return exitCode, buf.String()
+}
+
 func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 	exitCode, output := runCLIWithCapturedStderr(t, []string{"run", "-h"})
 	if exitCode != 0 {
@@ -45,6 +73,17 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 	}
 
 	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") {
+		t.Fatalf("expected help output, got %q", output)
+	}
+}
+
+func TestVisualizeCLI_HelpReturnsSuccess(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStderr(t, []string{"visualize", "-h"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "-file") {
 		t.Fatalf("expected help output, got %q", output)
 	}
 }
@@ -139,6 +178,63 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 
 	if !gotOptions.DryRun {
 		t.Fatal("expected dry run to be true")
+	}
+}
+
+func TestVisualizeCmd_UsesCustomWorkflowFile(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "custom.yaml")
+	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	origLoad := loadWorkflowFunc
+	origVisualize := visualizeWorkflowFunc
+	defer func() {
+		loadWorkflowFunc = origLoad
+		visualizeWorkflowFunc = origVisualize
+	}()
+
+	var loadedPath string
+	loadWorkflowFunc = func(path string) (*Workflow, error) {
+		loadedPath = path
+		return origLoad(path)
+	}
+
+	var gotWorkflow *Workflow
+	visualizeWorkflowFunc = func(wf *Workflow) error {
+		gotWorkflow = wf
+		return nil
+	}
+
+	if err := visualizeCmd([]string{"--file", workflowPath}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if loadedPath != workflowPath {
+		t.Fatalf("expected workflow path %q, got %q", workflowPath, loadedPath)
+	}
+
+	if gotWorkflow == nil || gotWorkflow.Tasks["demo"] == nil {
+		t.Fatalf("expected workflow loaded from custom file")
+	}
+}
+
+func TestRunCLI_VisualizePrintsMermaidGraph(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "visualize.yaml")
+	data := "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	exitCode, output := runCLIWithCapturedStdout(t, []string{"visualize", "--file", workflowPath})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "graph TD") || !strings.Contains(output, "build --> test") {
+		t.Fatalf("expected mermaid graph output, got %q", output)
 	}
 }
 

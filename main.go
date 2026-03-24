@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	loadWorkflowFunc = loadWorkflow
-	runWorkflowFunc  = RunWorkflowParallel
+	loadWorkflowFunc      = loadWorkflow
+	runWorkflowFunc       = RunWorkflowParallel
+	visualizeWorkflowFunc = VisualizeWorkflow
 )
 
 // main is the entry point of the Talos CLI application.
@@ -32,6 +33,15 @@ func runCLI(args []string) int {
 				return 0
 			}
 			fmt.Fprintln(os.Stderr, "Execution failed:", err)
+			return 1
+		}
+		return 0
+	case "visualize":
+		if err := visualizeCmd(args[1:]); err != nil {
+			if err == flag.ErrHelp {
+				return 0
+			}
+			fmt.Fprintln(os.Stderr, "Visualization failed:", err)
 			return 1
 		}
 		return 0
@@ -73,4 +83,26 @@ func runCmd(args []string) error {
 	}
 
 	return runWorkflowFunc(wf, opts)
+}
+
+// visualizeCmd handles the "visualize" command and its flags.
+func visualizeCmd(args []string) error {
+	fs := flag.NewFlagSet("visualize", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
+
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return err
+		}
+		return fmt.Errorf("parse flags: %w", err)
+	}
+
+	wf, err := loadWorkflowFunc(*workflowFile)
+	if err != nil {
+		return fmt.Errorf("load workflow: %w", err)
+	}
+
+	return visualizeWorkflowFunc(wf)
 }
