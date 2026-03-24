@@ -36,6 +36,12 @@ Run the sample workflow in this repository:
 ./talos run
 ```
 
+Run a workflow from a custom path:
+
+```bash
+./talos run --file ./workflows/dev.yaml
+```
+
 Limit parallelism:
 
 ```bash
@@ -61,7 +67,7 @@ tasks:
     depends_on: ["install", "migrate"]
 ```
 
-By default, Talos looks for `talos.yaml` in the current directory.
+By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
 
 ## How It Works
 
@@ -102,5 +108,4 @@ go test ./...
 
 - dry-run mode
 - visualization
-- custom workflow file path
 - retries and timeouts

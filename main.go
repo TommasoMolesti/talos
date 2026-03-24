@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+var (
+	loadWorkflowFunc = loadWorkflow
+	runWorkflowFunc  = RunWorkflowParallel
+)
+
 // main is the entry point of the Talos CLI application.
 //
 // It parses CLI arguments and delegates workflow execution
@@ -43,6 +48,7 @@ func runCmd(args []string) error {
 	fs.SetOutput(os.Stderr)
 
 	// Define flags
+	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
 	maxConcurrency := fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
 
 	// Parse flags
@@ -54,7 +60,7 @@ func runCmd(args []string) error {
 	}
 
 	// Load workflow
-	wf, err := loadWorkflow("talos.yaml")
+	wf, err := loadWorkflowFunc(*workflowFile)
 	if err != nil {
 		return fmt.Errorf("load workflow: %w", err)
 	}
@@ -64,5 +70,5 @@ func runCmd(args []string) error {
 		MaxConcurrency: *maxConcurrency,
 	}
 
-	return RunWorkflowParallel(wf, opts)
+	return runWorkflowFunc(wf, opts)
 }
