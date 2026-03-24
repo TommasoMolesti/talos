@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -17,6 +18,18 @@ var (
 // PrintStart prints the initial message indicating that workflow execution has started.
 func PrintStart() {
 	fmt.Println(info("[talos] Starting workflow...\n"))
+}
+
+// PrintDryRun prints the planned workflow execution without running commands.
+func PrintDryRun(plan [][]string, wf *Workflow) {
+	fmt.Println(info("[talos] Dry run\n"))
+	for i, stage := range plan {
+		fmt.Printf("%s Stage %d: %s\n", run("▶"), i+1, strings.Join(stage, ", "))
+		for _, name := range stage {
+			fmt.Printf("  - %s: %s\n", name, wf.Tasks[name].Command)
+		}
+		fmt.Println()
+	}
 }
 
 // PrintTaskStart prints the header for a task before execution.

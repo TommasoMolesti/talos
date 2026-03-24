@@ -19,6 +19,7 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 - **YAML-based configuration:** Simple, readable workflow definitions.
 - **Dependency-aware:** Smart execution based on task relationships.
 - **Parallel execution:** Runs independent tasks concurrently to save time.
+- **Dry-run mode:** Prints the execution plan without touching your system.
 - **Best-effort fail-fast behavior:** Stops scheduling new tasks and cancels running commands when a task fails.
 - **Clean CLI output:** Real-time updates on your pipeline's progress.
 
@@ -40,6 +41,12 @@ Run a workflow from a custom path:
 
 ```bash
 ./talos run --file ./workflows/dev.yaml
+```
+
+Preview the execution plan without running commands:
+
+```bash
+./talos run --dry-run
 ```
 
 Limit parallelism:
@@ -68,6 +75,7 @@ tasks:
 ```
 
 By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
+Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
 
 ## How It Works
 
@@ -106,6 +114,5 @@ go test ./...
 
 ## Roadmap
 
-- dry-run mode
 - visualization
 - retries and timeouts

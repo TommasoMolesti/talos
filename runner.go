@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +15,8 @@ type RunOptions struct {
 	// MaxConcurrency limits the number of tasks running in parallel.
 	// If <= 0, no limit is applied.
 	MaxConcurrency int
+	// DryRun prints the execution plan without running commands.
+	DryRun bool
 }
 
 type taskResult struct {
@@ -41,6 +44,15 @@ var runTask = func(ctx context.Context, task *Task) error {
 func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	if err := validateExecutionOrder(wf); err != nil {
 		return err
+	}
+
+	if opts.DryRun {
+		plan, err := buildExecutionPlan(wf)
+		if err != nil {
+			return err
+		}
+		PrintDryRun(plan, wf)
+		return nil
 	}
 
 	PrintStart()
@@ -151,4 +163,51 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	PrintEnd(time.Since(startTotal).Seconds())
 
 	return nil
+}
+
+func buildExecutionPlan(wf *Workflow) ([][]string, error) {
+	inDegree := make(map[string]int, len(wf.Tasks))
+	dependents := make(map[string][]string, len(wf.Tasks))
+
+	for name, task := range wf.Tasks {
+		inDegree[name] = len(task.DependsOn)
+		for _, dep := range task.DependsOn {
+			dependents[dep] = append(dependents[dep], name)
+		}
+	}
+
+	var ready []string
+	for name, count := range inDegree {
+		if count == 0 {
+			ready = append(ready, name)
+		}
+	}
+	sort.Strings(ready)
+
+	var plan [][]string
+	processed := 0
+
+	for len(ready) > 0 {
+		stage := append([]string(nil), ready...)
+		plan = append(plan, stage)
+		processed += len(stage)
+
+		var next []string
+		for _, name := range stage {
+			for _, dep := range dependents[name] {
+				inDegree[dep]--
+				if inDegree[dep] == 0 {
+					next = append(next, dep)
+				}
+			}
+		}
+		sort.Strings(next)
+		ready = next
+	}
+
+	if processed != len(wf.Tasks) {
+		return nil, errors.New("unable to build execution plan")
+	}
+
+	return plan, nil
 }

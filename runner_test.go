@@ -1,12 +1,42 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
+	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+func captureStdout(t *testing.T) (*bytes.Buffer, func()) {
+	t.Helper()
+
+	orig := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+
+	os.Stdout = w
+	buf := &bytes.Buffer{}
+
+	done := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(buf, r)
+		close(done)
+	}()
+
+	return buf, func() {
+		_ = w.Close()
+		os.Stdout = orig
+		<-done
+		_ = r.Close()
+	}
+}
 
 // --- VALIDATION TESTS ---
 
@@ -200,5 +230,42 @@ func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
 	defer mu.Unlock()
 	if !canceled["slow"] {
 		t.Fatal("expected slow task to be canceled")
+	}
+}
+
+func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		t.Fatalf("did not expect task %s to execute during dry-run", task.Name)
+		return nil
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"A": {Name: "A", Command: "echo A"},
+			"B": {Name: "B", Command: "echo B", DependsOn: []string{"A"}},
+			"C": {Name: "C", Command: "echo C", DependsOn: []string{"A"}},
+			"D": {Name: "D", Command: "echo D", DependsOn: []string{"B", "C"}},
+		},
+	}
+
+	stdout, restore := captureStdout(t)
+	defer restore()
+
+	if err := RunWorkflowParallel(wf, RunOptions{DryRun: true}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "Stage 1: A") {
+		t.Fatalf("expected stage 1 output, got %q", output)
+	}
+	if !strings.Contains(output, "Stage 2: B, C") {
+		t.Fatalf("expected stage 2 output, got %q", output)
+	}
+	if !strings.Contains(output, "Stage 3: D") {
+		t.Fatalf("expected stage 3 output, got %q", output)
 	}
 }
