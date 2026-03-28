@@ -23,11 +23,14 @@ func main() {
 
 func runCLI(args []string) int {
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "Usage: talos <command>")
+		printRootUsage(os.Stderr)
 		return 1
 	}
 
 	switch args[0] {
+	case "-h", "--help", "help":
+		printRootUsage(os.Stdout)
+		return 0
 	case "run":
 		if err := runCmd(args[1:]); err != nil {
 			if err == flag.ErrHelp {
@@ -57,6 +60,8 @@ func runCLI(args []string) int {
 		return 0
 	default:
 		fmt.Fprintln(os.Stderr, "Unknown command:", args[0])
+		fmt.Fprintln(os.Stderr)
+		printRootUsage(os.Stderr)
 		return 1
 	}
 }
@@ -66,6 +71,19 @@ func runCmd(args []string) error {
 	// Create a new flag set for the run command
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: talos run [flags]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Execute a workflow from a YAML file.")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Examples:")
+		fmt.Fprintln(os.Stderr, "  talos run")
+		fmt.Fprintln(os.Stderr, "  talos run --file ./workflows/dev.yaml")
+		fmt.Fprintln(os.Stderr, "  talos run --dry-run --target test")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Flags:")
+		fs.PrintDefaults()
+	}
 
 	// Define flags
 	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
@@ -107,6 +125,18 @@ func runCmd(args []string) error {
 func validateCmd(args []string) error {
 	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: talos validate [flags]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Validate a workflow file without running commands.")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Examples:")
+		fmt.Fprintln(os.Stderr, "  talos validate")
+		fmt.Fprintln(os.Stderr, "  talos validate --file ./workflows/dev.yaml")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Flags:")
+		fs.PrintDefaults()
+	}
 
 	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
 
@@ -134,6 +164,18 @@ func validateCmd(args []string) error {
 func visualizeCmd(args []string) error {
 	fs := flag.NewFlagSet("visualize", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: talos visualize [flags]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Render the workflow DAG as a Mermaid graph.")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Examples:")
+		fmt.Fprintln(os.Stderr, "  talos visualize")
+		fmt.Fprintln(os.Stderr, "  talos visualize --file ./workflows/dev.yaml")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Flags:")
+		fs.PrintDefaults()
+	}
 
 	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
 
@@ -150,4 +192,24 @@ func visualizeCmd(args []string) error {
 	}
 
 	return visualizeWorkflowFunc(wf)
+}
+
+func printRootUsage(w *os.File) {
+	fmt.Fprintln(w, "Talos executes local task workflows described as dependency-aware DAGs.")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Usage:")
+	fmt.Fprintln(w, "  talos <command> [flags]")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Commands:")
+	fmt.Fprintln(w, "  run        Execute a workflow")
+	fmt.Fprintln(w, "  validate   Check workflow syntax and dependency correctness")
+	fmt.Fprintln(w, "  visualize  Print the workflow DAG as Mermaid")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Examples:")
+	fmt.Fprintln(w, "  talos run --dry-run")
+	fmt.Fprintln(w, "  talos run --target build")
+	fmt.Fprintln(w, "  talos validate --file ./workflows/dev.yaml")
+	fmt.Fprintln(w, "  talos visualize")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Use \"talos <command> -h\" for command-specific help.")
 }

@@ -109,6 +109,7 @@ Use `visualize` to export the workflow graph in Mermaid format for README snippe
 Use `cwd` and `env` on a task when commands need to run from a specific directory or with task-local environment variables.
 Use `retries` on a task to retry transient failures before Talos gives up.
 Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
+Use `talos -h` or `talos <command> -h` to see command-specific examples and flag guidance.
 
 ## How It Works
 
@@ -148,6 +149,5 @@ go test ./...
 
 ## Roadmap
 
-- richer `--help` output and command guidance
 - shell tab completion for commands and flags
 - final execution summary with retries, timeouts, and skips

@@ -72,6 +72,10 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
 
+	if !strings.Contains(output, "Usage: talos run [flags]") || !strings.Contains(output, "talos run --dry-run --target test") {
+		t.Fatalf("expected usage examples, got %q", output)
+	}
+
 	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-target") {
 		t.Fatalf("expected help output, got %q", output)
 	}
@@ -81,6 +85,10 @@ func TestVisualizeCLI_HelpReturnsSuccess(t *testing.T) {
 	exitCode, output := runCLIWithCapturedStderr(t, []string{"visualize", "-h"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Usage: talos visualize [flags]") || !strings.Contains(output, "talos visualize --file ./workflows/dev.yaml") {
+		t.Fatalf("expected help output, got %q", output)
 	}
 
 	if !strings.Contains(output, "-file") {
@@ -94,8 +102,48 @@ func TestValidateCLI_HelpReturnsSuccess(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
 
+	if !strings.Contains(output, "Usage: talos validate [flags]") || !strings.Contains(output, "talos validate --file ./workflows/dev.yaml") {
+		t.Fatalf("expected help output, got %q", output)
+	}
+
 	if !strings.Contains(output, "-file") {
 		t.Fatalf("expected help output, got %q", output)
+	}
+}
+
+func TestCLI_RootHelpFlagReturnsSuccess(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStdout(t, []string{"-h"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Usage:\n  talos <command> [flags]") {
+		t.Fatalf("expected root usage output, got %q", output)
+	}
+	if !strings.Contains(output, "Commands:") || !strings.Contains(output, "run        Execute a workflow") {
+		t.Fatalf("expected command guidance, got %q", output)
+	}
+}
+
+func TestCLI_HelpCommandReturnsSuccess(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStdout(t, []string{"help"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Use \"talos <command> -h\" for command-specific help.") {
+		t.Fatalf("expected root help hint, got %q", output)
+	}
+}
+
+func TestCLI_NoArgsPrintsRootUsage(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStderr(t, nil)
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Talos executes local task workflows") {
+		t.Fatalf("expected root usage, got %q", output)
 	}
 }
 
@@ -107,6 +155,17 @@ func TestRunCLI_InvalidFlagReturnsFailure(t *testing.T) {
 
 	if !strings.Contains(output, "flag provided but not defined") {
 		t.Fatalf("expected parse error output, got %q", output)
+	}
+}
+
+func TestCLI_UnknownCommandPrintsGuidance(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStderr(t, []string{"unknown"})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Unknown command: unknown") || !strings.Contains(output, "Commands:") {
+		t.Fatalf("expected unknown command guidance, got %q", output)
 	}
 }
 
