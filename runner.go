@@ -201,6 +201,13 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	return nil
 }
 
+// buildExecutionPlan groups tasks into deterministic execution stages for dry-runs.
+//
+// Each stage contains all tasks whose dependencies have already been satisfied by
+// earlier stages, which means the tasks in the same inner slice can run in
+// parallel. Task names are sorted within a stage so dry-run output remains stable
+// across map iteration order. The function returns an error if not all tasks can
+// be scheduled into the plan.
 func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 	inDegree := make(map[string]int, len(wf.Tasks))
 	dependents := make(map[string][]string, len(wf.Tasks))

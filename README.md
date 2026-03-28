@@ -115,6 +115,7 @@ Talos is intentionally small, but it still shows a few useful Go design ideas:
 
 - `loadWorkflow` parses YAML and normalizes task names.
 - `validateExecutionOrder` checks for missing dependencies and cycles before any command starts.
+- `buildExecutionPlan` produces the deterministic stage-by-stage plan shown by `--dry-run`, grouping tasks that can run in parallel.
 - `RunWorkflowParallel` uses dependency counts plus a result loop to schedule ready tasks and unlock dependents as tasks finish.
 - Command execution uses `exec.CommandContext`, so a failing or timed-out task can cancel other running commands, while transient errors can be retried per task.
 
