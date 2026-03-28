@@ -9,12 +9,15 @@ import "time"
 // - a shell Command to execute
 // - optional dependencies (DependsOn) referencing other task names
 type Task struct {
-	Name            string        `yaml:"-"`
-	Command         string        `yaml:"command"`
-	DependsOn       []string      `yaml:"depends_on"`
-	Retries         int           `yaml:"retries"`
-	TimeoutSeconds  int           `yaml:"timeout"`
-	TimeoutDuration time.Duration `yaml:"-"`
+	Name            string            `yaml:"-"`
+	Command         string            `yaml:"command"`
+	Cwd             string            `yaml:"cwd"`
+	WorkingDir      string            `yaml:"-"`
+	Env             map[string]string `yaml:"env"`
+	DependsOn       []string          `yaml:"depends_on"`
+	Retries         int               `yaml:"retries"`
+	TimeoutSeconds  int               `yaml:"timeout"`
+	TimeoutDuration time.Duration     `yaml:"-"`
 }
 
 // Workflow represents a collection of tasks forming a DAG (Directed Acyclic Graph).

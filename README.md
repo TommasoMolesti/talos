@@ -22,6 +22,7 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 - **Dry-run mode:** Prints the execution plan without touching your system.
 - **Per-task retries:** Retry flaky commands before failing the workflow.
 - **Per-task timeouts:** Cancel tasks that run longer than expected.
+- **Per-task working directories and environment:** Run commands with task-specific `cwd` and `env` settings.
 - **Visualization:** Export the workflow DAG as a Mermaid graph for docs and demos.
 - **Best-effort fail-fast behavior:** Stops scheduling new tasks and cancels running commands when a task fails.
 - **Clean CLI output:** Real-time updates on your pipeline's progress.
@@ -88,6 +89,9 @@ tasks:
 
   migrate:
     command: "npm run migrate"
+    cwd: "./backend"
+    env:
+      DATABASE_URL: "postgres://localhost:5432/app"
     retries: 2
     depends_on: ["db"]
     timeout: 30
@@ -102,6 +106,7 @@ Use `--dry-run` to inspect the execution stages and commands before you run a wo
 Use `--target <task>` to run just one part of a workflow, including only the dependencies required for that task.
 Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
+Use `cwd` and `env` on a task when commands need to run from a specific directory or with task-local environment variables.
 Use `retries` on a task to retry transient failures before Talos gives up.
 Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
 
@@ -143,7 +148,6 @@ go test ./...
 
 ## Roadmap
 
-- per-task `cwd` and `env` support
 - richer `--help` output and command guidance
 - shell tab completion for commands and flags
 - final execution summary with retries, timeouts, and skips

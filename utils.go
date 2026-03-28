@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -30,6 +31,7 @@ func loadWorkflow(path string) (*Workflow, error) {
 		return nil, err
 	}
 
+	baseDir := filepath.Dir(path)
 	for name, task := range wf.Tasks {
 		task.Name = name
 		if task.Retries < 0 {
@@ -40,6 +42,13 @@ func loadWorkflow(path string) (*Workflow, error) {
 		}
 		if task.TimeoutSeconds > 0 {
 			task.TimeoutDuration = time.Duration(task.TimeoutSeconds) * time.Second
+		}
+		if task.Cwd != "" {
+			if filepath.IsAbs(task.Cwd) {
+				task.WorkingDir = filepath.Clean(task.Cwd)
+			} else {
+				task.WorkingDir = filepath.Clean(filepath.Join(baseDir, task.Cwd))
+			}
 		}
 	}
 

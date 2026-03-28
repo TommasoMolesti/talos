@@ -444,6 +444,45 @@ func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowDir := filepath.Join(tempDir, "config")
+	projectDir := filepath.Join(tempDir, "project")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("create workflow dir: %v", err)
+	}
+	if err := os.MkdirAll(projectDir, 0o755); err != nil {
+		t.Fatalf("create project dir: %v", err)
+	}
+
+	workflowPath := filepath.Join(workflowDir, "talos.yaml")
+	data := strings.Join([]string{
+		"tasks:",
+		"  demo:",
+		"    command: \"pwd\"",
+		"    cwd: \"../project\"",
+		"    env:",
+		"      APP_MODE: \"dev\"",
+	}, "\n")
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	wf, err := loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	task := wf.Tasks["demo"]
+	if task.WorkingDir != projectDir {
+		t.Fatalf("expected working dir %q, got %q", projectDir, task.WorkingDir)
+	}
+
+	if task.Env["APP_MODE"] != "dev" {
+		t.Fatalf("expected APP_MODE env to be parsed, got %#v", task.Env)
+	}
+}
+
 func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 	tempDir := t.TempDir()
 	workflowPath := filepath.Join(tempDir, "invalid-timeout.yaml")

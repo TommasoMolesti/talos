@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strings"
@@ -37,6 +38,8 @@ func (e taskTimeoutError) Error() string {
 // runTask executes a single task command using the system shell.
 var runTask = func(ctx context.Context, task *Task) error {
 	cmd := exec.CommandContext(ctx, "sh", "-c", task.Command)
+	cmd.Dir = taskDir(task)
+	cmd.Env = taskEnv(task.Env)
 
 	output, err := cmd.CombinedOutput()
 
@@ -48,6 +51,32 @@ var runTask = func(ctx context.Context, task *Task) error {
 	}
 
 	return err
+}
+
+func taskDir(task *Task) string {
+	if task.WorkingDir != "" {
+		return task.WorkingDir
+	}
+	return task.Cwd
+}
+
+func taskEnv(env map[string]string) []string {
+	if len(env) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(env))
+	for key := range env {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	values := append([]string(nil), os.Environ()...)
+	for _, key := range keys {
+		values = append(values, key+"="+env[key])
+	}
+
+	return values
 }
 
 // RunWorkflowParallel executes the workflow with optional concurrency limits.

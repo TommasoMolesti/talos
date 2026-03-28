@@ -357,3 +357,30 @@ func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 		t.Fatalf("expected 3 attempts, got %d", attempts)
 	}
 }
+
+func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
+	tempDir := t.TempDir()
+	task := &Task{
+		Name:    "demo",
+		Command: "pwd && printf '%s\\n' \"$TASK_MODE\"",
+		Cwd:     tempDir,
+		Env: map[string]string{
+			"TASK_MODE": "enabled",
+		},
+	}
+
+	stdout, restore := captureStdout(t)
+	err := runTask(context.Background(), task)
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, tempDir) {
+		t.Fatalf("expected task output to include working dir %q, got %q", tempDir, output)
+	}
+	if !strings.Contains(output, "enabled") {
+		t.Fatalf("expected task output to include env var, got %q", output)
+	}
+}
