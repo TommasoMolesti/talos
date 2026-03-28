@@ -71,6 +71,7 @@ func runCmd(args []string) error {
 	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
 	dryRun := fs.Bool("dry-run", false, "print the execution plan without running commands")
 	maxConcurrency := fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
+	targetTask := fs.String("target", "", "run only the specified task and its dependencies")
 
 	// Parse flags
 	if err := fs.Parse(args); err != nil {
@@ -84,6 +85,13 @@ func runCmd(args []string) error {
 	wf, err := loadWorkflowFunc(*workflowFile)
 	if err != nil {
 		return fmt.Errorf("load workflow: %w", err)
+	}
+
+	if *targetTask != "" {
+		wf, err = workflowForTarget(wf, *targetTask)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Run with options

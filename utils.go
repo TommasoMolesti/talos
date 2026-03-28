@@ -107,3 +107,45 @@ func validateExecutionOrder(wf *Workflow) error {
 func validateWorkflow(wf *Workflow) error {
 	return validateExecutionOrder(wf)
 }
+
+// workflowForTarget returns a workflow containing only the target task and the
+// dependencies required to execute it.
+func workflowForTarget(wf *Workflow, target string) (*Workflow, error) {
+	if _, ok := wf.Tasks[target]; !ok {
+		return nil, fmt.Errorf("target task %s not found", target)
+	}
+
+	included := make(map[string]bool)
+	var include func(string) error
+
+	include = func(name string) error {
+		task, ok := wf.Tasks[name]
+		if !ok {
+			return fmt.Errorf("task not found: %s", name)
+		}
+		if included[name] {
+			return nil
+		}
+		included[name] = true
+		for _, dep := range task.DependsOn {
+			if _, ok := wf.Tasks[dep]; !ok {
+				return fmt.Errorf("task %s depends on unknown task %s", name, dep)
+			}
+			if err := include(dep); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if err := include(target); err != nil {
+		return nil, err
+	}
+
+	filtered := make(map[string]*Task, len(included))
+	for name := range included {
+		filtered[name] = wf.Tasks[name]
+	}
+
+	return &Workflow{Tasks: filtered}, nil
+}

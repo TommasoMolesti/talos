@@ -70,6 +70,12 @@ Limit parallelism:
 ./talos run --max-concurrency 2
 ```
 
+Run only one task and the dependencies needed to reach it:
+
+```bash
+./talos run --target test
+```
+
 ### Create a workflow
 
 ```yaml
@@ -93,6 +99,7 @@ tasks:
 
 By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
 Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
+Use `--target <task>` to run just one part of a workflow, including only the dependencies required for that task.
 Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
 Use `retries` on a task to retry transient failures before Talos gives up.
@@ -136,7 +143,6 @@ go test ./...
 
 ## Roadmap
 
-- `--target <task>` to run only part of a workflow
 - per-task `cwd` and `env` support
 - richer `--help` output and command guidance
 - shell tab completion for commands and flags

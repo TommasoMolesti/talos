@@ -72,7 +72,7 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
 
-	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") {
+	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-target") {
 		t.Fatalf("expected help output, got %q", output)
 	}
 }
@@ -192,6 +192,75 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 	}
 }
 
+func TestRunCmd_TargetFiltersWorkflowToDependencies(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "target.yaml")
+	data := strings.Join([]string{
+		"tasks:",
+		"  install:",
+		"    command: \"npm install\"",
+		"  lint:",
+		"    command: \"npm run lint\"",
+		"  build:",
+		"    command: \"npm run build\"",
+		"    depends_on: [\"install\"]",
+		"  test:",
+		"    command: \"npm test\"",
+		"    depends_on: [\"build\"]",
+	}, "\n")
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	origRun := runWorkflowFunc
+	defer func() { runWorkflowFunc = origRun }()
+
+	var gotWorkflow *Workflow
+	runWorkflowFunc = func(wf *Workflow, opts RunOptions) error {
+		gotWorkflow = wf
+		return nil
+	}
+
+	if err := runCmd([]string{"--file", workflowPath, "--target", "test"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if gotWorkflow == nil {
+		t.Fatal("expected workflow to be passed to runner")
+	}
+
+	if len(gotWorkflow.Tasks) != 3 {
+		t.Fatalf("expected 3 tasks in targeted workflow, got %d", len(gotWorkflow.Tasks))
+	}
+
+	for _, name := range []string{"install", "build", "test"} {
+		if gotWorkflow.Tasks[name] == nil {
+			t.Fatalf("expected task %s in targeted workflow", name)
+		}
+	}
+
+	if gotWorkflow.Tasks["lint"] != nil {
+		t.Fatal("did not expect unrelated task lint in targeted workflow")
+	}
+}
+
+func TestRunCmd_TargetMissingTaskReturnsError(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "target.yaml")
+	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	err := runCmd([]string{"--file", workflowPath, "--target", "missing"})
+	if err == nil {
+		t.Fatal("expected missing target error")
+	}
+
+	if !strings.Contains(err.Error(), "target task missing not found") {
+		t.Fatalf("expected missing target error, got %v", err)
+	}
+}
+
 func TestValidateCmd_UsesCustomWorkflowFile(t *testing.T) {
 	tempDir := t.TempDir()
 	workflowPath := filepath.Join(tempDir, "custom.yaml")
@@ -285,6 +354,39 @@ func TestRunCLI_VisualizePrintsMermaidGraph(t *testing.T) {
 
 	if !strings.Contains(output, "graph TD") || !strings.Contains(output, "build --> test") {
 		t.Fatalf("expected mermaid graph output, got %q", output)
+	}
+}
+
+func TestRunCLI_TargetDryRunPrintsOnlyRequiredTasks(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "target-dry-run.yaml")
+	data := strings.Join([]string{
+		"tasks:",
+		"  install:",
+		"    command: \"npm install\"",
+		"  lint:",
+		"    command: \"npm run lint\"",
+		"  build:",
+		"    command: \"npm run build\"",
+		"    depends_on: [\"install\"]",
+		"  test:",
+		"    command: \"npm test\"",
+		"    depends_on: [\"build\"]",
+	}, "\n")
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	exitCode, output := runCLIWithCapturedStdout(t, []string{"run", "--file", workflowPath, "--target", "test", "--dry-run"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if strings.Contains(output, "lint") {
+		t.Fatalf("did not expect unrelated task in dry-run output, got %q", output)
+	}
+	if !strings.Contains(output, "Stage 1: install") || !strings.Contains(output, "Stage 2: build") || !strings.Contains(output, "Stage 3: test") {
+		t.Fatalf("expected targeted dry-run output, got %q", output)
 	}
 }
 
