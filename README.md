@@ -151,4 +151,10 @@ go test ./...
 
 ## Roadmap
 
-- shell tab completion for commands and flags
+Short term, Talos is focused on becoming the most practical local workflow runner for solo developers and small teams. The next milestones are centered on polish, usability, and everyday workflow ergonomics rather than expanding into heavy infrastructure.
+
+- Improve CLI feedback with clearer validation and runtime errors, richer task summaries, and optional machine-readable output.
+- Make workflow authoring easier with task descriptions, tags, workflow-level defaults, and a `talos init` command for generating starter configs.
+- Add practical execution controls such as `continue-on-error`, task skipping, conditional execution, and configurable shell support.
+- Expand the examples library with real-world workflows for Go, Node.js, Python, Docker, monorepos, and local data pipelines.
+- Improve distribution and adoption with version reporting, repeatable releases, and simple installation options such as a Homebrew tap.
