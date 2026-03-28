@@ -22,8 +22,12 @@ type RunOptions struct {
 }
 
 type taskResult struct {
-	name string
-	err  error
+	name     string
+	err      error
+	status   taskStatus
+	attempts int
+	duration time.Duration
+	timeout  time.Duration
 }
 
 type taskTimeoutError struct {
@@ -33,6 +37,28 @@ type taskTimeoutError struct {
 
 func (e taskTimeoutError) Error() string {
 	return fmt.Sprintf("task %s timed out after %s", e.task, e.timeout)
+}
+
+type taskStatus string
+
+const (
+	taskStatusPending  taskStatus = "pending"
+	taskStatusSuccess  taskStatus = "success"
+	taskStatusFailed   taskStatus = "failed"
+	taskStatusTimedOut taskStatus = "timed_out"
+	taskStatusCanceled taskStatus = "canceled"
+	taskStatusSkipped  taskStatus = "skipped"
+)
+
+type taskSummary struct {
+	Status   taskStatus
+	Attempts int
+	Duration time.Duration
+	Timeout  time.Duration
+}
+
+type executionSummary struct {
+	Tasks map[string]*taskSummary
 }
 
 // runTask executes a single task command using the system shell.
@@ -96,6 +122,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 
 	PrintStart()
 	startTotal := time.Now()
+	summary := newExecutionSummary(wf)
 
 	inDegree := make(map[string]int)
 	dependents := make(map[string][]string)
@@ -129,13 +156,13 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 			case sem <- struct{}{}:
 				defer func() { <-sem }()
 			case <-ctx.Done():
-				results <- taskResult{name: task.Name, err: ctx.Err()}
+				results <- taskResult{name: task.Name, err: ctx.Err(), status: taskStatusSkipped}
 				return
 			}
 		}
 
 		if ctx.Err() != nil {
-			results <- taskResult{name: task.Name, err: ctx.Err()}
+			results <- taskResult{name: task.Name, err: ctx.Err(), status: taskStatusSkipped}
 			return
 		}
 
@@ -151,7 +178,9 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 
 		maxAttempts := task.Retries + 1
 		var err error
+		attempts := 0
 		for attempt := 1; attempt <= maxAttempts; attempt++ {
+			attempts = attempt
 			err = runTask(taskCtx, task)
 			if err == nil {
 				break
@@ -165,25 +194,50 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 			PrintTaskRetry(task.Name, attempt+1, maxAttempts, err)
 		}
 
-		duration := time.Since(start).Seconds()
+		duration := time.Since(start)
 
 		if err != nil {
 			if task.TimeoutDuration > 0 && errors.Is(taskCtx.Err(), context.DeadlineExceeded) {
-				PrintTaskTimeout(task.Name, duration, task.TimeoutDuration)
-				results <- taskResult{name: task.Name, err: taskTimeoutError{task: task.Name, timeout: task.TimeoutDuration}}
+				PrintTaskTimeout(task.Name, duration.Seconds(), task.TimeoutDuration)
+				results <- taskResult{
+					name:     task.Name,
+					err:      taskTimeoutError{task: task.Name, timeout: task.TimeoutDuration},
+					status:   taskStatusTimedOut,
+					attempts: attempts,
+					duration: duration,
+					timeout:  task.TimeoutDuration,
+				}
 				return
 			}
 			if errors.Is(err, context.Canceled) {
-				PrintTaskCanceled(task.Name, duration)
+				PrintTaskCanceled(task.Name, duration.Seconds())
+				results <- taskResult{
+					name:     task.Name,
+					err:      err,
+					status:   taskStatusCanceled,
+					attempts: attempts,
+					duration: duration,
+				}
 			} else {
-				PrintTaskFailure(task.Name, duration)
+				PrintTaskFailure(task.Name, duration.Seconds())
+				results <- taskResult{
+					name:     task.Name,
+					err:      err,
+					status:   taskStatusFailed,
+					attempts: attempts,
+					duration: duration,
+				}
 			}
-			results <- taskResult{name: task.Name, err: err}
 			return
 		}
 
-		PrintTaskSuccess(task.Name, duration)
-		results <- taskResult{name: task.Name}
+		PrintTaskSuccess(task.Name, duration.Seconds())
+		results <- taskResult{
+			name:     task.Name,
+			status:   taskStatusSuccess,
+			attempts: attempts,
+			duration: duration,
+		}
 	}
 
 	startTask := func(name string) {
@@ -204,6 +258,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	for completed < started {
 		result := <-results
 		completed++
+		summary.record(result)
 
 		if result.err != nil {
 			if firstErr == nil && !errors.Is(result.err, context.Canceled) {
@@ -222,10 +277,14 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	}
 
 	wg.Wait()
+	summary.markPendingAsSkipped()
+	totalDuration := time.Since(startTotal)
+	PrintSummary(summary)
 	if firstErr != nil {
+		PrintEnd(totalDuration.Seconds(), false)
 		return firstErr
 	}
-	PrintEnd(time.Since(startTotal).Seconds())
+	PrintEnd(totalDuration.Seconds(), true)
 
 	return nil
 }
@@ -282,4 +341,31 @@ func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 	}
 
 	return plan, nil
+}
+
+func newExecutionSummary(wf *Workflow) *executionSummary {
+	tasks := make(map[string]*taskSummary, len(wf.Tasks))
+	for name := range wf.Tasks {
+		tasks[name] = &taskSummary{Status: taskStatusPending}
+	}
+	return &executionSummary{Tasks: tasks}
+}
+
+func (s *executionSummary) record(result taskResult) {
+	task := s.Tasks[result.name]
+	if task == nil {
+		return
+	}
+	task.Status = result.status
+	task.Attempts = result.attempts
+	task.Duration = result.duration
+	task.Timeout = result.timeout
+}
+
+func (s *executionSummary) markPendingAsSkipped() {
+	for _, task := range s.Tasks {
+		if task.Status == taskStatusPending {
+			task.Status = taskStatusSkipped
+		}
+	}
 }

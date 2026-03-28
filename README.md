@@ -25,6 +25,7 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 - **Per-task working directories and environment:** Run commands with task-specific `cwd` and `env` settings.
 - **Visualization:** Export the workflow DAG as a Mermaid graph for docs and demos.
 - **Best-effort fail-fast behavior:** Stops scheduling new tasks and cancels running commands when a task fails.
+- **Final execution summary:** Reports retries, timeouts, cancellations, and skipped tasks at the end of each run.
 - **Clean CLI output:** Real-time updates on your pipeline's progress.
 
 ## Quick Start
@@ -138,6 +139,7 @@ Talos is intentionally small, but it still shows a few useful Go design ideas:
 - `buildExecutionPlan` produces the deterministic stage-by-stage plan shown by `--dry-run`, grouping tasks that can run in parallel.
 - `RunWorkflowParallel` uses dependency counts plus a result loop to schedule ready tasks and unlock dependents as tasks finish.
 - Command execution uses `exec.CommandContext`, so a failing or timed-out task can cancel other running commands, while transient errors can be retried per task.
+- Each run ends with a summary that makes retries, timeouts, cancellations, and skipped downstream tasks easy to spot.
 
 This keeps the code easy to follow while still demonstrating concurrency, graph traversal, and CLI design.
 
@@ -150,4 +152,3 @@ go test ./...
 ## Roadmap
 
 - shell tab completion for commands and flags
-- final execution summary with retries, timeouts, and skips

@@ -332,6 +332,44 @@ func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	attempts := 0
+	runTask = func(_ context.Context, task *Task) error {
+		attempts++
+		if attempts < 3 {
+			return errors.New("transient failure")
+		}
+		return nil
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
+		},
+	}
+
+	stdout, restore := captureStdout(t)
+	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
+		restore()
+		t.Fatalf("unexpected error: %v", err)
+	}
+	restore()
+
+	output := stdout.String()
+	if !strings.Contains(output, "[talos] Summary") {
+		t.Fatalf("expected summary output, got %q", output)
+	}
+	if !strings.Contains(output, "total=1 success=1 failed=0 timed_out=0 canceled=0 skipped=0") {
+		t.Fatalf("expected summary counts, got %q", output)
+	}
+	if !strings.Contains(output, "retries: flaky (2 retries)") {
+		t.Fatalf("expected retry details, got %q", output)
+	}
+}
+
 func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 	orig := runTask
 	defer func() { runTask = orig }()
@@ -355,6 +393,59 @@ func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 
 	if attempts != 3 {
 		t.Fatalf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testing.T) {
+	orig := runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(ctx context.Context, task *Task) error {
+		switch task.Name {
+		case "slow":
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(100 * time.Millisecond):
+				return nil
+			}
+		case "blocked":
+			t.Fatal("did not expect blocked task to run")
+			return nil
+		default:
+			return nil
+		}
+	}
+
+	wf := &Workflow{
+		Tasks: map[string]*Task{
+			"slow":    {Name: "slow", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
+			"blocked": {Name: "blocked", Command: "echo blocked", DependsOn: []string{"slow"}},
+		},
+	}
+
+	stdout, restore := captureStdout(t)
+	err := RunWorkflowParallel(wf, RunOptions{})
+	restore()
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "[talos] Summary") {
+		t.Fatalf("expected summary output, got %q", output)
+	}
+	if !strings.Contains(output, "total=2 success=0 failed=0 timed_out=1 canceled=0 skipped=1") {
+		t.Fatalf("expected timeout and skip counts, got %q", output)
+	}
+	if !strings.Contains(output, "timeouts: slow (20ms)") {
+		t.Fatalf("expected timeout details, got %q", output)
+	}
+	if !strings.Contains(output, "skipped: blocked") {
+		t.Fatalf("expected skipped task details, got %q", output)
+	}
+	if !strings.Contains(output, "[talos] Failed in") {
+		t.Fatalf("expected failed final line, got %q", output)
 	}
 }
 
