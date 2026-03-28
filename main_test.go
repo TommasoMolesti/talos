@@ -88,6 +88,17 @@ func TestVisualizeCLI_HelpReturnsSuccess(t *testing.T) {
 	}
 }
 
+func TestValidateCLI_HelpReturnsSuccess(t *testing.T) {
+	exitCode, output := runCLIWithCapturedStderr(t, []string{"validate", "-h"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "-file") {
+		t.Fatalf("expected help output, got %q", output)
+	}
+}
+
 func TestRunCLI_InvalidFlagReturnsFailure(t *testing.T) {
 	exitCode, output := runCLIWithCapturedStderr(t, []string{"run", "--bad-flag"})
 	if exitCode != 1 {
@@ -181,6 +192,45 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 	}
 }
 
+func TestValidateCmd_UsesCustomWorkflowFile(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "custom.yaml")
+	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	origLoad := loadWorkflowFunc
+	origValidate := validateWorkflowFunc
+	defer func() {
+		loadWorkflowFunc = origLoad
+		validateWorkflowFunc = origValidate
+	}()
+
+	var loadedPath string
+	loadWorkflowFunc = func(path string) (*Workflow, error) {
+		loadedPath = path
+		return origLoad(path)
+	}
+
+	var gotWorkflow *Workflow
+	validateWorkflowFunc = func(wf *Workflow) error {
+		gotWorkflow = wf
+		return nil
+	}
+
+	if err := validateCmd([]string{"--file", workflowPath}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if loadedPath != workflowPath {
+		t.Fatalf("expected workflow path %q, got %q", workflowPath, loadedPath)
+	}
+
+	if gotWorkflow == nil || gotWorkflow.Tasks["demo"] == nil {
+		t.Fatalf("expected workflow loaded from custom file")
+	}
+}
+
 func TestVisualizeCmd_UsesCustomWorkflowFile(t *testing.T) {
 	tempDir := t.TempDir()
 	workflowPath := filepath.Join(tempDir, "custom.yaml")
@@ -235,6 +285,42 @@ func TestRunCLI_VisualizePrintsMermaidGraph(t *testing.T) {
 
 	if !strings.Contains(output, "graph TD") || !strings.Contains(output, "build --> test") {
 		t.Fatalf("expected mermaid graph output, got %q", output)
+	}
+}
+
+func TestValidateCLI_PrintsSuccessMessage(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "validate.yaml")
+	data := "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	exitCode, output := runCLIWithCapturedStdout(t, []string{"validate", "--file", workflowPath})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Workflow is valid (2 tasks)") {
+		t.Fatalf("expected validation success output, got %q", output)
+	}
+}
+
+func TestValidateCLI_InvalidWorkflowReturnsFailure(t *testing.T) {
+	tempDir := t.TempDir()
+	workflowPath := filepath.Join(tempDir, "invalid.yaml")
+	data := "tasks:\n  build:\n    command: \"go build\"\n    depends_on: [\"missing\"]\n"
+	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	exitCode, output := runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Validation failed: task build depends on unknown task missing") {
+		t.Fatalf("expected validation error output, got %q", output)
 	}
 }
 

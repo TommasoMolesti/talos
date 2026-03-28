@@ -102,3 +102,8 @@ func validateExecutionOrder(wf *Workflow) error {
 
 	return nil
 }
+
+// validateWorkflow performs config-only checks before execution.
+func validateWorkflow(wf *Workflow) error {
+	return validateExecutionOrder(wf)
+}

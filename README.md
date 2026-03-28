@@ -52,6 +52,12 @@ Preview the execution plan without running commands:
 ./talos run --dry-run
 ```
 
+Validate a workflow file without running any commands:
+
+```bash
+./talos validate
+```
+
 Render the workflow as a Mermaid DAG:
 
 ```bash
@@ -87,6 +93,7 @@ tasks:
 
 By default, Talos looks for `talos.yaml` in the current directory, but you can override that with `--file`.
 Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
+Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
 Use `retries` on a task to retry transient failures before Talos gives up.
 Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
@@ -129,7 +136,6 @@ go test ./...
 
 ## Roadmap
 
-- `validate` command for config-only checks
 - `--target <task>` to run only part of a workflow
 - per-task `cwd` and `env` support
 - richer `--help` output and command guidance

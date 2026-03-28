@@ -9,6 +9,7 @@ import (
 var (
 	loadWorkflowFunc      = loadWorkflow
 	runWorkflowFunc       = RunWorkflowParallel
+	validateWorkflowFunc  = validateWorkflow
 	visualizeWorkflowFunc = VisualizeWorkflow
 )
 
@@ -33,6 +34,15 @@ func runCLI(args []string) int {
 				return 0
 			}
 			fmt.Fprintln(os.Stderr, "Execution failed:", err)
+			return 1
+		}
+		return 0
+	case "validate":
+		if err := validateCmd(args[1:]); err != nil {
+			if err == flag.ErrHelp {
+				return 0
+			}
+			fmt.Fprintln(os.Stderr, "Validation failed:", err)
 			return 1
 		}
 		return 0
@@ -83,6 +93,33 @@ func runCmd(args []string) error {
 	}
 
 	return runWorkflowFunc(wf, opts)
+}
+
+// validateCmd handles the "validate" command and its flags.
+func validateCmd(args []string) error {
+	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
+
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return err
+		}
+		return fmt.Errorf("parse flags: %w", err)
+	}
+
+	wf, err := loadWorkflowFunc(*workflowFile)
+	if err != nil {
+		return fmt.Errorf("load workflow: %w", err)
+	}
+
+	if err := validateWorkflowFunc(wf); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(os.Stdout, "[talos] Workflow is valid (%d tasks)\n", len(wf.Tasks))
+	return nil
 }
 
 // visualizeCmd handles the "visualize" command and its flags.
