@@ -8,7 +8,8 @@ import (
 
 // VisualizeWorkflow prints the workflow DAG in Mermaid format.
 func VisualizeWorkflow(wf *Workflow) error {
-	if err := validateExecutionOrder(wf); err != nil {
+	var err error = validateExecutionOrder(wf)
+	if err != nil {
 		return err
 	}
 
@@ -18,7 +19,7 @@ func VisualizeWorkflow(wf *Workflow) error {
 
 // BuildMermaidGraph renders the workflow DAG as a Mermaid graph.
 func BuildMermaidGraph(wf *Workflow) string {
-	names := sortedTaskNames(wf)
+	var names []string = sortedTaskNames(wf)
 
 	var b strings.Builder
 	b.WriteString("graph TD\n")
@@ -29,7 +30,7 @@ func BuildMermaidGraph(wf *Workflow) string {
 
 	var edges []string
 	for _, name := range names {
-		task := wf.Tasks[name]
+		var task *Task = wf.Tasks[name]
 		for _, dep := range task.DependsOn {
 			edges = append(edges, fmt.Sprintf("    %s --> %s\n", mermaidID(dep), mermaidID(name)))
 		}
@@ -43,7 +44,7 @@ func BuildMermaidGraph(wf *Workflow) string {
 }
 
 func sortedTaskNames(wf *Workflow) []string {
-	names := make([]string, 0, len(wf.Tasks))
+	var names []string = make([]string, 0, len(wf.Tasks))
 	for name := range wf.Tasks {
 		names = append(names, name)
 	}

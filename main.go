@@ -32,7 +32,8 @@ func runCLI(args []string) int {
 		printRootUsage(os.Stdout)
 		return 0
 	case "run":
-		if err := runCmd(args[1:]); err != nil {
+		var err error = runCmd(args[1:])
+		if err != nil {
 			if err == flag.ErrHelp {
 				return 0
 			}
@@ -41,7 +42,8 @@ func runCLI(args []string) int {
 		}
 		return 0
 	case "validate":
-		if err := validateCmd(args[1:]); err != nil {
+		var err error = validateCmd(args[1:])
+		if err != nil {
 			if err == flag.ErrHelp {
 				return 0
 			}
@@ -50,7 +52,8 @@ func runCLI(args []string) int {
 		}
 		return 0
 	case "visualize":
-		if err := visualizeCmd(args[1:]); err != nil {
+		var err error = visualizeCmd(args[1:])
+		if err != nil {
 			if err == flag.ErrHelp {
 				return 0
 			}
@@ -69,7 +72,7 @@ func runCLI(args []string) int {
 // runCmd handles the "run" command and its flags.
 func runCmd(args []string) error {
 	// Create a new flag set for the run command
-	fs := flag.NewFlagSet("run", flag.ContinueOnError)
+	var fs *flag.FlagSet = flag.NewFlagSet("run", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: talos run [flags]")
@@ -86,13 +89,14 @@ func runCmd(args []string) error {
 	}
 
 	// Define flags
-	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
-	dryRun := fs.Bool("dry-run", false, "print the execution plan without running commands")
-	maxConcurrency := fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
-	targetTask := fs.String("target", "", "run only the specified task and its dependencies")
+	var workflowFile *string = fs.String("file", "talos.yaml", "path to the workflow file")
+	var dryRun *bool = fs.Bool("dry-run", false, "print the execution plan without running commands")
+	var maxConcurrency *int = fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
+	var targetTask *string = fs.String("target", "", "run only the specified task and its dependencies")
 
 	// Parse flags
-	if err := fs.Parse(args); err != nil {
+	var err error = fs.Parse(args)
+	if err != nil {
 		if err == flag.ErrHelp {
 			return err
 		}
@@ -100,7 +104,8 @@ func runCmd(args []string) error {
 	}
 
 	// Load workflow
-	wf, err := loadWorkflowFunc(*workflowFile)
+	var wf *Workflow
+	wf, err = loadWorkflowFunc(*workflowFile)
 	if err != nil {
 		return fmt.Errorf("load workflow: %w", err)
 	}
@@ -113,7 +118,7 @@ func runCmd(args []string) error {
 	}
 
 	// Run with options
-	opts := RunOptions{
+	var opts RunOptions = RunOptions{
 		MaxConcurrency: *maxConcurrency,
 		DryRun:         *dryRun,
 	}
@@ -123,7 +128,7 @@ func runCmd(args []string) error {
 
 // validateCmd handles the "validate" command and its flags.
 func validateCmd(args []string) error {
-	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
+	var fs *flag.FlagSet = flag.NewFlagSet("validate", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: talos validate [flags]")
@@ -138,21 +143,24 @@ func validateCmd(args []string) error {
 		fs.PrintDefaults()
 	}
 
-	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
+	var workflowFile *string = fs.String("file", "talos.yaml", "path to the workflow file")
 
-	if err := fs.Parse(args); err != nil {
+	var err error = fs.Parse(args)
+	if err != nil {
 		if err == flag.ErrHelp {
 			return err
 		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
 
-	wf, err := loadWorkflowFunc(*workflowFile)
+	var wf *Workflow
+	wf, err = loadWorkflowFunc(*workflowFile)
 	if err != nil {
 		return fmt.Errorf("load workflow: %w", err)
 	}
 
-	if err := validateWorkflowFunc(wf); err != nil {
+	err = validateWorkflowFunc(wf)
+	if err != nil {
 		return err
 	}
 
@@ -162,7 +170,7 @@ func validateCmd(args []string) error {
 
 // visualizeCmd handles the "visualize" command and its flags.
 func visualizeCmd(args []string) error {
-	fs := flag.NewFlagSet("visualize", flag.ContinueOnError)
+	var fs *flag.FlagSet = flag.NewFlagSet("visualize", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: talos visualize [flags]")
@@ -177,16 +185,18 @@ func visualizeCmd(args []string) error {
 		fs.PrintDefaults()
 	}
 
-	workflowFile := fs.String("file", "talos.yaml", "path to the workflow file")
+	var workflowFile *string = fs.String("file", "talos.yaml", "path to the workflow file")
 
-	if err := fs.Parse(args); err != nil {
+	var err error = fs.Parse(args)
+	if err != nil {
 		if err == flag.ErrHelp {
 			return err
 		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
 
-	wf, err := loadWorkflowFunc(*workflowFile)
+	var wf *Workflow
+	wf, err = loadWorkflowFunc(*workflowFile)
 	if err != nil {
 		return fmt.Errorf("load workflow: %w", err)
 	}

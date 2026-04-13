@@ -149,6 +149,30 @@ This keeps the code easy to follow while still demonstrating concurrency, graph 
 go test ./...
 ```
 
+## Code Style
+
+Talos uses an explicit Go declaration style for `if`-statement setup and error handling.
+Prefer declaring variables before the `if` that checks them, instead of introducing them inside the condition itself.
+
+Preferred:
+
+```go
+var err error = fs.Parse(args)
+if err != nil {
+	return fmt.Errorf("parse flags: %w", err)
+}
+```
+
+Avoid:
+
+```go
+if err := fs.Parse(args); err != nil {
+	return fmt.Errorf("parse flags: %w", err)
+}
+```
+
+This preference is mainly about `if` statements. Regular `for` loops can keep normal Go loop variables so iteration stays easy to scan.
+
 ## Roadmap
 
 Short term, Talos is focused on becoming the most practical local workflow runner for solo developers and small teams. The next milestones are centered on polish, usability, and everyday workflow ergonomics rather than expanding into heavy infrastructure.

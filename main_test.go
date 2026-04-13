@@ -13,22 +13,25 @@ import (
 func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
 	t.Helper()
 
-	orig := os.Stderr
-	r, w, err := os.Pipe()
+	var orig *os.File = os.Stderr
+	var r *os.File
+	var w *os.File
+	var err error
+	r, w, err = os.Pipe()
 	if err != nil {
 		t.Fatalf("create pipe: %v", err)
 	}
 
 	os.Stderr = w
-	buf := &bytes.Buffer{}
+	var buf *bytes.Buffer = &bytes.Buffer{}
 
-	done := make(chan struct{})
+	var done chan struct{} = make(chan struct{})
 	go func() {
 		_, _ = io.Copy(buf, r)
 		close(done)
 	}()
 
-	exitCode := runCLI(args)
+	var exitCode int = runCLI(args)
 
 	_ = w.Close()
 	os.Stderr = orig
@@ -41,22 +44,25 @@ func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
 func runCLIWithCapturedStdout(t *testing.T, args []string) (int, string) {
 	t.Helper()
 
-	orig := os.Stdout
-	r, w, err := os.Pipe()
+	var orig *os.File = os.Stdout
+	var r *os.File
+	var w *os.File
+	var err error
+	r, w, err = os.Pipe()
 	if err != nil {
 		t.Fatalf("create pipe: %v", err)
 	}
 
 	os.Stdout = w
-	buf := &bytes.Buffer{}
+	var buf *bytes.Buffer = &bytes.Buffer{}
 
-	done := make(chan struct{})
+	var done chan struct{} = make(chan struct{})
 	go func() {
 		_, _ = io.Copy(buf, r)
 		close(done)
 	}()
 
-	exitCode := runCLI(args)
+	var exitCode int = runCLI(args)
 
 	_ = w.Close()
 	os.Stdout = orig
@@ -67,7 +73,9 @@ func runCLIWithCapturedStdout(t *testing.T, args []string) (int, string) {
 }
 
 func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"run", "-h"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"run", "-h"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -82,7 +90,9 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 }
 
 func TestVisualizeCLI_HelpReturnsSuccess(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"visualize", "-h"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"visualize", "-h"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -97,7 +107,9 @@ func TestVisualizeCLI_HelpReturnsSuccess(t *testing.T) {
 }
 
 func TestValidateCLI_HelpReturnsSuccess(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"validate", "-h"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"validate", "-h"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -112,7 +124,9 @@ func TestValidateCLI_HelpReturnsSuccess(t *testing.T) {
 }
 
 func TestCLI_RootHelpFlagReturnsSuccess(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStdout(t, []string{"-h"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"-h"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -126,7 +140,9 @@ func TestCLI_RootHelpFlagReturnsSuccess(t *testing.T) {
 }
 
 func TestCLI_HelpCommandReturnsSuccess(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStdout(t, []string{"help"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"help"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -137,7 +153,9 @@ func TestCLI_HelpCommandReturnsSuccess(t *testing.T) {
 }
 
 func TestCLI_NoArgsPrintsRootUsage(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, nil)
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, nil)
 	if exitCode != 1 {
 		t.Fatalf("expected exit code 1, got %d", exitCode)
 	}
@@ -148,7 +166,9 @@ func TestCLI_NoArgsPrintsRootUsage(t *testing.T) {
 }
 
 func TestRunCLI_InvalidFlagReturnsFailure(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"run", "--bad-flag"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"run", "--bad-flag"})
 	if exitCode != 1 {
 		t.Fatalf("expected exit code 1, got %d", exitCode)
 	}
@@ -159,7 +179,9 @@ func TestRunCLI_InvalidFlagReturnsFailure(t *testing.T) {
 }
 
 func TestCLI_UnknownCommandPrintsGuidance(t *testing.T) {
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"unknown"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"unknown"})
 	if exitCode != 1 {
 		t.Fatalf("expected exit code 1, got %d", exitCode)
 	}
@@ -170,14 +192,15 @@ func TestCLI_UnknownCommandPrintsGuidance(t *testing.T) {
 }
 
 func TestRunCmd_UsesCustomWorkflowFile(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "custom.yaml")
-	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	origLoad := loadWorkflowFunc
-	origRun := runWorkflowFunc
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origRun func(*Workflow, RunOptions) error = runWorkflowFunc
 	defer func() {
 		loadWorkflowFunc = origLoad
 		runWorkflowFunc = origRun
@@ -197,7 +220,8 @@ func TestRunCmd_UsesCustomWorkflowFile(t *testing.T) {
 		return nil
 	}
 
-	if err := runCmd([]string{"--file", workflowPath, "--max-concurrency", "3"}); err != nil {
+	err = runCmd([]string{"--file", workflowPath, "--max-concurrency", "3"})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -219,14 +243,15 @@ func TestRunCmd_UsesCustomWorkflowFile(t *testing.T) {
 }
 
 func TestRunCmd_PassesDryRunOption(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "custom.yaml")
-	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	origLoad := loadWorkflowFunc
-	origRun := runWorkflowFunc
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origRun func(*Workflow, RunOptions) error = runWorkflowFunc
 	defer func() {
 		loadWorkflowFunc = origLoad
 		runWorkflowFunc = origRun
@@ -242,7 +267,8 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 		return nil
 	}
 
-	if err := runCmd([]string{"--file", workflowPath, "--dry-run"}); err != nil {
+	err = runCmd([]string{"--file", workflowPath, "--dry-run"})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -252,9 +278,9 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 }
 
 func TestRunCmd_TargetFiltersWorkflowToDependencies(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "target.yaml")
-	data := strings.Join([]string{
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "target.yaml")
+	var data string = strings.Join([]string{
 		"tasks:",
 		"  install:",
 		"    command: \"npm install\"",
@@ -267,11 +293,12 @@ func TestRunCmd_TargetFiltersWorkflowToDependencies(t *testing.T) {
 		"    command: \"npm test\"",
 		"    depends_on: [\"build\"]",
 	}, "\n")
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	origRun := runWorkflowFunc
+	var origRun func(*Workflow, RunOptions) error = runWorkflowFunc
 	defer func() { runWorkflowFunc = origRun }()
 
 	var gotWorkflow *Workflow
@@ -280,7 +307,8 @@ func TestRunCmd_TargetFiltersWorkflowToDependencies(t *testing.T) {
 		return nil
 	}
 
-	if err := runCmd([]string{"--file", workflowPath, "--target", "test"}); err != nil {
+	err = runCmd([]string{"--file", workflowPath, "--target", "test"})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -304,13 +332,14 @@ func TestRunCmd_TargetFiltersWorkflowToDependencies(t *testing.T) {
 }
 
 func TestRunCmd_TargetMissingTaskReturnsError(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "target.yaml")
-	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "target.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	err := runCmd([]string{"--file", workflowPath, "--target", "missing"})
+	err = runCmd([]string{"--file", workflowPath, "--target", "missing"})
 	if err == nil {
 		t.Fatal("expected missing target error")
 	}
@@ -321,14 +350,15 @@ func TestRunCmd_TargetMissingTaskReturnsError(t *testing.T) {
 }
 
 func TestValidateCmd_UsesCustomWorkflowFile(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "custom.yaml")
-	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	origLoad := loadWorkflowFunc
-	origValidate := validateWorkflowFunc
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origValidate func(*Workflow) error = validateWorkflowFunc
 	defer func() {
 		loadWorkflowFunc = origLoad
 		validateWorkflowFunc = origValidate
@@ -346,7 +376,8 @@ func TestValidateCmd_UsesCustomWorkflowFile(t *testing.T) {
 		return nil
 	}
 
-	if err := validateCmd([]string{"--file", workflowPath}); err != nil {
+	err = validateCmd([]string{"--file", workflowPath})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -360,14 +391,15 @@ func TestValidateCmd_UsesCustomWorkflowFile(t *testing.T) {
 }
 
 func TestVisualizeCmd_UsesCustomWorkflowFile(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "custom.yaml")
-	if err := os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	origLoad := loadWorkflowFunc
-	origVisualize := visualizeWorkflowFunc
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origVisualize func(*Workflow) error = visualizeWorkflowFunc
 	defer func() {
 		loadWorkflowFunc = origLoad
 		visualizeWorkflowFunc = origVisualize
@@ -385,7 +417,8 @@ func TestVisualizeCmd_UsesCustomWorkflowFile(t *testing.T) {
 		return nil
 	}
 
-	if err := visualizeCmd([]string{"--file", workflowPath}); err != nil {
+	err = visualizeCmd([]string{"--file", workflowPath})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -399,14 +432,17 @@ func TestVisualizeCmd_UsesCustomWorkflowFile(t *testing.T) {
 }
 
 func TestRunCLI_VisualizePrintsMermaidGraph(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "visualize.yaml")
-	data := "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "visualize.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	exitCode, output := runCLIWithCapturedStdout(t, []string{"visualize", "--file", workflowPath})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"visualize", "--file", workflowPath})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -417,9 +453,9 @@ func TestRunCLI_VisualizePrintsMermaidGraph(t *testing.T) {
 }
 
 func TestRunCLI_TargetDryRunPrintsOnlyRequiredTasks(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "target-dry-run.yaml")
-	data := strings.Join([]string{
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "target-dry-run.yaml")
+	var data string = strings.Join([]string{
 		"tasks:",
 		"  install:",
 		"    command: \"npm install\"",
@@ -432,11 +468,14 @@ func TestRunCLI_TargetDryRunPrintsOnlyRequiredTasks(t *testing.T) {
 		"    command: \"npm test\"",
 		"    depends_on: [\"build\"]",
 	}, "\n")
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	exitCode, output := runCLIWithCapturedStdout(t, []string{"run", "--file", workflowPath, "--target", "test", "--dry-run"})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"run", "--file", workflowPath, "--target", "test", "--dry-run"})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -450,14 +489,17 @@ func TestRunCLI_TargetDryRunPrintsOnlyRequiredTasks(t *testing.T) {
 }
 
 func TestValidateCLI_PrintsSuccessMessage(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "validate.yaml")
-	data := "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "validate.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build\"\n  test:\n    command: \"go test ./...\"\n    depends_on: [\"build\"]\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	exitCode, output := runCLIWithCapturedStdout(t, []string{"validate", "--file", workflowPath})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"validate", "--file", workflowPath})
 	if exitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", exitCode)
 	}
@@ -468,14 +510,17 @@ func TestValidateCLI_PrintsSuccessMessage(t *testing.T) {
 }
 
 func TestValidateCLI_InvalidWorkflowReturnsFailure(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "invalid.yaml")
-	data := "tasks:\n  build:\n    command: \"go build\"\n    depends_on: [\"missing\"]\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "invalid.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build\"\n    depends_on: [\"missing\"]\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	exitCode, output := runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
 	if exitCode != 1 {
 		t.Fatalf("expected exit code 1, got %d", exitCode)
 	}
@@ -486,14 +531,16 @@ func TestValidateCLI_InvalidWorkflowReturnsFailure(t *testing.T) {
 }
 
 func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "timeout.yaml")
-	data := "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: 25\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "timeout.yaml")
+	var data string = "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: 25\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	wf, err := loadWorkflow(workflowPath)
+	var wf *Workflow
+	wf, err = loadWorkflow(workflowPath)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -504,18 +551,20 @@ func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
 }
 
 func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowDir := filepath.Join(tempDir, "config")
-	projectDir := filepath.Join(tempDir, "project")
-	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowDir string = filepath.Join(tempDir, "config")
+	var projectDir string = filepath.Join(tempDir, "project")
+	var err error = os.MkdirAll(workflowDir, 0o755)
+	if err != nil {
 		t.Fatalf("create workflow dir: %v", err)
 	}
-	if err := os.MkdirAll(projectDir, 0o755); err != nil {
+	err = os.MkdirAll(projectDir, 0o755)
+	if err != nil {
 		t.Fatalf("create project dir: %v", err)
 	}
 
-	workflowPath := filepath.Join(workflowDir, "talos.yaml")
-	data := strings.Join([]string{
+	var workflowPath string = filepath.Join(workflowDir, "talos.yaml")
+	var data string = strings.Join([]string{
 		"tasks:",
 		"  demo:",
 		"    command: \"pwd\"",
@@ -523,16 +572,18 @@ func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
 		"    env:",
 		"      APP_MODE: \"dev\"",
 	}, "\n")
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	err = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	wf, err := loadWorkflow(workflowPath)
+	var wf *Workflow
+	wf, err = loadWorkflow(workflowPath)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	task := wf.Tasks["demo"]
+	var task *Task = wf.Tasks["demo"]
 	if task.WorkingDir != projectDir {
 		t.Fatalf("expected working dir %q, got %q", projectDir, task.WorkingDir)
 	}
@@ -543,14 +594,15 @@ func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
 }
 
 func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "invalid-timeout.yaml")
-	data := "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: -1\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "invalid-timeout.yaml")
+	var data string = "tasks:\n  slow:\n    command: \"sleep 1\"\n    timeout: -1\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	_, err := loadWorkflow(workflowPath)
+	_, err = loadWorkflow(workflowPath)
 	if err == nil {
 		t.Fatal("expected invalid timeout error")
 	}
@@ -561,14 +613,15 @@ func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 }
 
 func TestLoadWorkflow_RejectsNegativeRetries(t *testing.T) {
-	tempDir := t.TempDir()
-	workflowPath := filepath.Join(tempDir, "invalid-retries.yaml")
-	data := "tasks:\n  flaky:\n    command: \"echo nope\"\n    retries: -1\n"
-	if err := os.WriteFile(workflowPath, []byte(data), 0o644); err != nil {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "invalid-retries.yaml")
+	var data string = "tasks:\n  flaky:\n    command: \"echo nope\"\n    retries: -1\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
 		t.Fatalf("write workflow file: %v", err)
 	}
 
-	_, err := loadWorkflow(workflowPath)
+	_, err = loadWorkflow(workflowPath)
 	if err == nil {
 		t.Fatal("expected invalid retries error")
 	}

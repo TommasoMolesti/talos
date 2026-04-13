@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	info = color.New(color.FgCyan).SprintFunc()
-	run  = color.New(color.FgYellow).SprintFunc()
-	ok   = color.New(color.FgGreen).SprintFunc()
-	skip = color.New(color.FgHiBlack).SprintFunc()
-	fail = color.New(color.FgRed).SprintFunc()
+	info func(a ...interface{}) string = color.New(color.FgCyan).SprintFunc()
+	run  func(a ...interface{}) string = color.New(color.FgYellow).SprintFunc()
+	ok   func(a ...interface{}) string = color.New(color.FgGreen).SprintFunc()
+	skip func(a ...interface{}) string = color.New(color.FgHiBlack).SprintFunc()
+	fail func(a ...interface{}) string = color.New(color.FgRed).SprintFunc()
 )
 
 // PrintStart prints the initial message indicating that workflow execution has started.
@@ -92,7 +92,7 @@ func PrintEnd(total float64, success bool) {
 
 // PrintSummary prints a final summary of task outcomes for the workflow run.
 func PrintSummary(summary *executionSummary) {
-	counts := make(map[taskStatus]int)
+	var counts map[taskStatus]int = make(map[taskStatus]int)
 	var retried []string
 	var timedOut []string
 	var canceled []string

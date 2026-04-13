@@ -15,16 +15,19 @@ import (
 func captureStdout(t *testing.T) (*bytes.Buffer, func()) {
 	t.Helper()
 
-	orig := os.Stdout
-	r, w, err := os.Pipe()
+	var orig *os.File = os.Stdout
+	var r *os.File
+	var w *os.File
+	var err error
+	r, w, err = os.Pipe()
 	if err != nil {
 		t.Fatalf("create pipe: %v", err)
 	}
 
 	os.Stdout = w
-	buf := &bytes.Buffer{}
+	var buf *bytes.Buffer = &bytes.Buffer{}
 
-	done := make(chan struct{})
+	var done chan struct{} = make(chan struct{})
 	go func() {
 		_, _ = io.Copy(buf, r)
 		close(done)
@@ -41,7 +44,7 @@ func captureStdout(t *testing.T) (*bytes.Buffer, func()) {
 // --- VALIDATION TESTS ---
 
 func TestVerifyExecutionOrder_Linear(t *testing.T) {
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A"},
 			"B": {Name: "B", DependsOn: []string{"A"}},
@@ -49,32 +52,35 @@ func TestVerifyExecutionOrder_Linear(t *testing.T) {
 		},
 	}
 
-	if err := validateExecutionOrder(wf); err != nil {
+	var err error = validateExecutionOrder(wf)
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
 func TestVerifyExecutionOrder_MissingDependency(t *testing.T) {
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A", DependsOn: []string{"B"}},
 		},
 	}
 
-	if err := validateExecutionOrder(wf); err == nil {
+	var err error = validateExecutionOrder(wf)
+	if err == nil {
 		t.Fatal("expected error for missing dependency")
 	}
 }
 
 func TestVerifyExecutionOrder_Cycle(t *testing.T) {
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A", DependsOn: []string{"B"}},
 			"B": {Name: "B", DependsOn: []string{"A"}},
 		},
 	}
 
-	if err := validateExecutionOrder(wf); err == nil {
+	var err error = validateExecutionOrder(wf)
+	if err == nil {
 		t.Fatal("expected error for cycle")
 	}
 }
@@ -83,9 +89,9 @@ func TestVerifyExecutionOrder_Cycle(t *testing.T) {
 
 func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 	var mu sync.Mutex
-	executed := make(map[string]bool)
+	var executed map[string]bool = make(map[string]bool)
 
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(_ context.Context, task *Task) error {
@@ -95,7 +101,7 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A"},
 			"B": {Name: "B", DependsOn: []string{"A"}},
@@ -104,7 +110,8 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 		},
 	}
 
-	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -117,10 +124,10 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 
 func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 	var mu sync.Mutex
-	running := 0
-	maxSeen := 0
+	var running int = 0
+	var maxSeen int = 0
 
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(_ context.Context, task *Task) error {
@@ -140,7 +147,7 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A"},
 			"B": {Name: "B"},
@@ -149,7 +156,8 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 		},
 	}
 
-	if err := RunWorkflowParallel(wf, RunOptions{MaxConcurrency: 2}); err != nil {
+	var err error = RunWorkflowParallel(wf, RunOptions{MaxConcurrency: 2})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -159,7 +167,7 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(_ context.Context, task *Task) error {
@@ -172,15 +180,15 @@ func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"fail":    {Name: "fail"},
 			"succeed": {Name: "succeed"},
 		},
 	}
 
-	start := time.Now()
-	err := RunWorkflowParallel(wf, RunOptions{})
+	var start time.Time = time.Now()
+	var err error = RunWorkflowParallel(wf, RunOptions{})
 	if err == nil {
 		t.Fatal("expected workflow error")
 	}
@@ -191,11 +199,11 @@ func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	var mu sync.Mutex
-	canceled := make(map[string]bool)
+	var canceled map[string]bool = make(map[string]bool)
 
 	runTask = func(ctx context.Context, task *Task) error {
 		if task.Name == "fail" {
@@ -214,14 +222,14 @@ func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
 		}
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"fail": {Name: "fail"},
 			"slow": {Name: "slow"},
 		},
 	}
 
-	err := RunWorkflowParallel(wf, RunOptions{})
+	var err error = RunWorkflowParallel(wf, RunOptions{})
 	if err == nil {
 		t.Fatal("expected workflow error")
 	}
@@ -234,7 +242,7 @@ func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(_ context.Context, task *Task) error {
@@ -242,7 +250,7 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"A": {Name: "A", Command: "echo A"},
 			"B": {Name: "B", Command: "echo B", DependsOn: []string{"A"}},
@@ -251,14 +259,17 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 		},
 	}
 
-	stdout, restore := captureStdout(t)
-	if err := RunWorkflowParallel(wf, RunOptions{DryRun: true}); err != nil {
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{DryRun: true})
+	if err != nil {
 		restore()
 		t.Fatalf("unexpected error: %v", err)
 	}
 	restore()
 
-	output := stdout.String()
+	var output string = stdout.String()
 	if !strings.Contains(output, "Stage 1: A") {
 		t.Fatalf("expected stage 1 output, got %q", output)
 	}
@@ -271,7 +282,7 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_TaskTimeoutFailsWorkflow(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(ctx context.Context, task *Task) error {
@@ -283,13 +294,13 @@ func TestRunWorkflowParallel_TaskTimeoutFailsWorkflow(t *testing.T) {
 		}
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"slow": {Name: "slow", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
 		},
 	}
 
-	err := RunWorkflowParallel(wf, RunOptions{})
+	var err error = RunWorkflowParallel(wf, RunOptions{})
 	if err == nil {
 		t.Fatal("expected timeout error")
 	}
@@ -305,10 +316,10 @@ func TestRunWorkflowParallel_TaskTimeoutFailsWorkflow(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
-	attempts := 0
+	var attempts int = 0
 	runTask = func(_ context.Context, task *Task) error {
 		attempts++
 		if attempts < 3 {
@@ -317,13 +328,14 @@ func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
 		},
 	}
 
-	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -333,10 +345,10 @@ func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
-	attempts := 0
+	var attempts int = 0
 	runTask = func(_ context.Context, task *Task) error {
 		attempts++
 		if attempts < 3 {
@@ -345,20 +357,23 @@ func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
 		return nil
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
 		},
 	}
 
-	stdout, restore := captureStdout(t)
-	if err := RunWorkflowParallel(wf, RunOptions{}); err != nil {
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	if err != nil {
 		restore()
 		t.Fatalf("unexpected error: %v", err)
 	}
 	restore()
 
-	output := stdout.String()
+	var output string = stdout.String()
 	if !strings.Contains(output, "[talos] Summary") {
 		t.Fatalf("expected summary output, got %q", output)
 	}
@@ -371,22 +386,22 @@ func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
-	attempts := 0
+	var attempts int = 0
 	runTask = func(_ context.Context, task *Task) error {
 		attempts++
 		return errors.New("still failing")
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
 		},
 	}
 
-	err := RunWorkflowParallel(wf, RunOptions{})
+	var err error = RunWorkflowParallel(wf, RunOptions{})
 	if err == nil {
 		t.Fatal("expected workflow error")
 	}
@@ -397,7 +412,7 @@ func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 }
 
 func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testing.T) {
-	orig := runTask
+	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
 
 	runTask = func(ctx context.Context, task *Task) error {
@@ -417,21 +432,23 @@ func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testi
 		}
 	}
 
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"slow":    {Name: "slow", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
 			"blocked": {Name: "blocked", Command: "echo blocked", DependsOn: []string{"slow"}},
 		},
 	}
 
-	stdout, restore := captureStdout(t)
-	err := RunWorkflowParallel(wf, RunOptions{})
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{})
 	restore()
 	if err == nil {
 		t.Fatal("expected workflow error")
 	}
 
-	output := stdout.String()
+	var output string = stdout.String()
 	if !strings.Contains(output, "[talos] Summary") {
 		t.Fatalf("expected summary output, got %q", output)
 	}
@@ -450,8 +467,8 @@ func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testi
 }
 
 func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
-	tempDir := t.TempDir()
-	task := &Task{
+	var tempDir string = t.TempDir()
+	var task *Task = &Task{
 		Name:    "demo",
 		Command: "pwd && printf '%s\\n' \"$TASK_MODE\"",
 		Cwd:     tempDir,
@@ -460,14 +477,16 @@ func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
 		},
 	}
 
-	stdout, restore := captureStdout(t)
-	err := runTask(context.Background(), task)
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = runTask(context.Background(), task)
 	restore()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	output := stdout.String()
+	var output string = stdout.String()
 	if !strings.Contains(output, tempDir) {
 		t.Fatalf("expected task output to include working dir %q, got %q", tempDir, output)
 	}

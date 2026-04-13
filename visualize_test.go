@@ -6,7 +6,7 @@ import (
 )
 
 func TestBuildMermaidGraph_SortsNodesAndEdges(t *testing.T) {
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"deploy": {Name: "deploy", DependsOn: []string{"test", "build"}},
 			"build":  {Name: "build"},
@@ -14,8 +14,8 @@ func TestBuildMermaidGraph_SortsNodesAndEdges(t *testing.T) {
 		},
 	}
 
-	got := BuildMermaidGraph(wf)
-	want := strings.Join([]string{
+	var got string = BuildMermaidGraph(wf)
+	var want string = strings.Join([]string{
 		"graph TD",
 		"    build[\"build\"]",
 		"    deploy[\"deploy\"]",
@@ -32,13 +32,13 @@ func TestBuildMermaidGraph_SortsNodesAndEdges(t *testing.T) {
 }
 
 func TestBuildMermaidGraph_SanitizesNodeIDs(t *testing.T) {
-	wf := &Workflow{
+	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
 			"lint-check": {Name: "lint-check"},
 		},
 	}
 
-	got := BuildMermaidGraph(wf)
+	var got string = BuildMermaidGraph(wf)
 	if !strings.Contains(got, "lint_check[\"lint-check\"]") {
 		t.Fatalf("expected sanitized node id, got %q", got)
 	}

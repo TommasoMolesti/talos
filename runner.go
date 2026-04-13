@@ -62,14 +62,16 @@ type executionSummary struct {
 }
 
 // runTask executes a single task command using the system shell.
-var runTask = func(ctx context.Context, task *Task) error {
-	cmd := exec.CommandContext(ctx, "sh", "-c", task.Command)
+var runTask func(context.Context, *Task) error = func(ctx context.Context, task *Task) error {
+	var cmd *exec.Cmd = exec.CommandContext(ctx, "sh", "-c", task.Command)
 	cmd.Dir = taskDir(task)
 	cmd.Env = taskEnv(task.Env)
 
-	output, err := cmd.CombinedOutput()
+	var output []byte
+	var err error
+	output, err = cmd.CombinedOutput()
 
-	lines := strings.Split(string(output), "\n")
+	var lines []string = strings.Split(string(output), "\n")
 	for _, line := range lines {
 		if line != "" {
 			PrintTaskOutputLine(line)
@@ -91,13 +93,13 @@ func taskEnv(env map[string]string) []string {
 		return nil
 	}
 
-	keys := make([]string, 0, len(env))
+	var keys []string = make([]string, 0, len(env))
 	for key := range env {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
-	values := append([]string(nil), os.Environ()...)
+	var values []string = append([]string(nil), os.Environ()...)
 	for _, key := range keys {
 		values = append(values, key+"="+env[key])
 	}
@@ -107,12 +109,14 @@ func taskEnv(env map[string]string) []string {
 
 // RunWorkflowParallel executes the workflow with optional concurrency limits.
 func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
-	if err := validateExecutionOrder(wf); err != nil {
+	var err error = validateExecutionOrder(wf)
+	if err != nil {
 		return err
 	}
 
 	if opts.DryRun {
-		plan, err := buildExecutionPlan(wf)
+		var plan [][]string
+		plan, err = buildExecutionPlan(wf)
 		if err != nil {
 			return err
 		}
@@ -121,11 +125,11 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	}
 
 	PrintStart()
-	startTotal := time.Now()
-	summary := newExecutionSummary(wf)
+	var startTotal time.Time = time.Now()
+	var summary *executionSummary = newExecutionSummary(wf)
 
-	inDegree := make(map[string]int)
-	dependents := make(map[string][]string)
+	var inDegree map[string]int = make(map[string]int)
+	var dependents map[string][]string = make(map[string][]string)
 
 	for name, task := range wf.Tasks {
 		inDegree[name] = len(task.DependsOn)
@@ -134,13 +138,15 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	var ctx context.Context
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
 
 	var wg sync.WaitGroup
-	results := make(chan taskResult, len(wf.Tasks))
-	started := 0
-	completed := 0
+	var results chan taskResult = make(chan taskResult, len(wf.Tasks))
+	var started int = 0
+	var completed int = 0
 	var firstErr error
 
 	var sem chan struct{}
@@ -148,7 +154,8 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		sem = make(chan struct{}, opts.MaxConcurrency)
 	}
 
-	run := func(task *Task) {
+	var run func(*Task)
+	run = func(task *Task) {
 		defer wg.Done()
 
 		if sem != nil {
@@ -166,19 +173,19 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 			return
 		}
 
-		taskCtx := ctx
+		var taskCtx context.Context = ctx
 		var cancelTask context.CancelFunc
 		if task.TimeoutDuration > 0 {
 			taskCtx, cancelTask = context.WithTimeout(ctx, task.TimeoutDuration)
 			defer cancelTask()
 		}
 
-		start := time.Now()
+		var start time.Time = time.Now()
 		PrintTaskStart(task.Name, task.DependsOn)
 
-		maxAttempts := task.Retries + 1
+		var maxAttempts int = task.Retries + 1
 		var err error
-		attempts := 0
+		var attempts int = 0
 		for attempt := 1; attempt <= maxAttempts; attempt++ {
 			attempts = attempt
 			err = runTask(taskCtx, task)
@@ -194,7 +201,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 			PrintTaskRetry(task.Name, attempt+1, maxAttempts, err)
 		}
 
-		duration := time.Since(start)
+		var duration time.Duration = time.Since(start)
 
 		if err != nil {
 			if task.TimeoutDuration > 0 && errors.Is(taskCtx.Err(), context.DeadlineExceeded) {
@@ -240,7 +247,8 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		}
 	}
 
-	startTask := func(name string) {
+	var startTask func(string)
+	startTask = func(name string) {
 		if ctx.Err() != nil {
 			return
 		}
@@ -256,7 +264,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	}
 
 	for completed < started {
-		result := <-results
+		var result taskResult = <-results
 		completed++
 		summary.record(result)
 
@@ -278,7 +286,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 
 	wg.Wait()
 	summary.markPendingAsSkipped()
-	totalDuration := time.Since(startTotal)
+	var totalDuration time.Duration = time.Since(startTotal)
 	PrintSummary(summary)
 	if firstErr != nil {
 		PrintEnd(totalDuration.Seconds(), false)
@@ -297,8 +305,8 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 // across map iteration order. The function returns an error if not all tasks can
 // be scheduled into the plan.
 func buildExecutionPlan(wf *Workflow) ([][]string, error) {
-	inDegree := make(map[string]int, len(wf.Tasks))
-	dependents := make(map[string][]string, len(wf.Tasks))
+	var inDegree map[string]int = make(map[string]int, len(wf.Tasks))
+	var dependents map[string][]string = make(map[string][]string, len(wf.Tasks))
 
 	for name, task := range wf.Tasks {
 		inDegree[name] = len(task.DependsOn)
@@ -316,10 +324,10 @@ func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 	sort.Strings(ready)
 
 	var plan [][]string
-	processed := 0
+	var processed int = 0
 
 	for len(ready) > 0 {
-		stage := append([]string(nil), ready...)
+		var stage []string = append([]string(nil), ready...)
 		plan = append(plan, stage)
 		processed += len(stage)
 
@@ -344,7 +352,7 @@ func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 }
 
 func newExecutionSummary(wf *Workflow) *executionSummary {
-	tasks := make(map[string]*taskSummary, len(wf.Tasks))
+	var tasks map[string]*taskSummary = make(map[string]*taskSummary, len(wf.Tasks))
 	for name := range wf.Tasks {
 		tasks[name] = &taskSummary{Status: taskStatusPending}
 	}
@@ -352,7 +360,7 @@ func newExecutionSummary(wf *Workflow) *executionSummary {
 }
 
 func (s *executionSummary) record(result taskResult) {
-	task := s.Tasks[result.name]
+	var task *taskSummary = s.Tasks[result.name]
 	if task == nil {
 		return
 	}
