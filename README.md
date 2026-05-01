@@ -175,10 +175,61 @@ This preference is mainly about `if` statements. Regular `for` loops can keep no
 
 ## Roadmap
 
-Short term, Talos is focused on becoming the most practical local workflow runner for solo developers and small teams. The next milestones are centered on polish, usability, and everyday workflow ergonomics rather than expanding into heavy infrastructure.
+Talos is focused on becoming a practical local-first workflow runner for developers who want dependency-aware task execution without running external infrastructure.
 
-- Improve CLI feedback with clearer validation and runtime errors, richer task summaries, and optional machine-readable output.
-- Make workflow authoring easier with task descriptions, tags, workflow-level defaults, and a `talos init` command for generating starter configs.
-- Add practical execution controls such as `continue-on-error`, task skipping, conditional execution, and configurable shell support.
-- Expand the examples library with real-world workflows for Go, Node.js, Python, Docker, monorepos, and local data pipelines.
-- Improve distribution and adoption with version reporting, repeatable releases, and simple installation options such as a Homebrew tap.
+The roadmap is intentionally scoped around reliability, usability, and distribution before adding heavier orchestration features.
+
+### 1. Project Foundation
+
+- Add GitHub Actions for `go test ./...`
+- Add linting and formatting checks
+- Add release builds for Linux, macOS, and Windows
+- Add version reporting with `talos version`
+- Add installation instructions for `go install`
+- Tag the first usable release
+
+### 2. Workflow Authoring
+
+- Add `talos init` to generate a starter `talos.yaml`
+- Add task descriptions for better dry-run and summary output
+- Add workflow-level defaults for `cwd`, `env`, `timeout`, and `retries`
+- Add richer validation errors with task names and config locations
+- Expand examples for Go, Node.js, Python, Docker, and monorepos
+
+### 3. Execution Controls
+
+- Add configurable shell support
+- Add `continue_on_error` for non-blocking tasks
+- Add task skipping through CLI flags
+- Add conditional task execution
+- Add clearer behavior for canceled, skipped, and downstream tasks
+- Add optional machine-readable output for automation use cases
+
+### 4. Developer Experience
+
+- Improve CLI output for long-running workflows
+- Add compact and verbose output modes
+- Add better task timing and execution summary details
+- Add Mermaid export options, such as writing to a file
+- Add documentation for common workflow patterns
+
+### 5. Distribution And Adoption
+
+- Publish repeatable GitHub releases
+- Add Homebrew installation support
+- Add a small demo project showing Talos in a real development workflow
+- Add contribution guidelines
+- Add issue templates for bugs and feature requests
+
+### Later Ideas
+
+These are intentionally not the short-term focus, but may become useful if Talos grows:
+
+- File watching
+- Task caching
+- Remote execution
+- Plugin support
+- Web UI
+- Integration with CI systems
+
+Talos should remain small, understandable, and local-first. Features that require servers, databases, or distributed infrastructure should be added only if they preserve that core idea.
