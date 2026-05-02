@@ -641,8 +641,11 @@ func TestValidateCLI_InvalidWorkflowReturnsFailure(t *testing.T) {
 		t.Fatalf("expected exit code 1, got %d", exitCode)
 	}
 
-	if !strings.Contains(output, "Validation failed: task build depends on unknown task missing") {
+	if !strings.Contains(output, "Validation failed:") || !strings.Contains(output, "task build depends on unknown task missing") {
 		t.Fatalf("expected validation error output, got %q", output)
+	}
+	if !strings.Contains(output, workflowPath+":4:18") {
+		t.Fatalf("expected validation error location, got %q", output)
 	}
 }
 
@@ -825,6 +828,9 @@ func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 	if !strings.Contains(err.Error(), "timeout must be zero or greater") {
 		t.Fatalf("expected invalid timeout error, got %v", err)
 	}
+	if !strings.Contains(err.Error(), workflowPath+":4:5") {
+		t.Fatalf("expected invalid timeout location, got %v", err)
+	}
 }
 
 func TestLoadWorkflow_RejectsNegativeRetries(t *testing.T) {
@@ -862,5 +868,8 @@ func TestLoadWorkflow_RejectsNegativeDefaults(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "defaults retries must be zero or greater") {
 		t.Fatalf("expected defaults validation error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":2:3") {
+		t.Fatalf("expected defaults validation location, got %v", err)
 	}
 }

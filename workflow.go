@@ -23,6 +23,19 @@ type Task struct {
 	TimeoutDuration time.Duration     `yaml:"-"`
 }
 
+// ConfigLocation identifies a position in the workflow config file.
+type ConfigLocation struct {
+	Line   int
+	Column int
+}
+
+// TaskConfigLocations stores source locations for one task config.
+type TaskConfigLocations struct {
+	Name         ConfigLocation
+	Fields       map[string]ConfigLocation
+	Dependencies map[string]ConfigLocation
+}
+
 // WorkflowDefaults defines values inherited by tasks that do not override them.
 type WorkflowDefaults struct {
 	Cwd            string            `yaml:"cwd"`
@@ -39,6 +52,9 @@ type WorkflowDefaults struct {
 // Tasks are stored in a map where the key is the task name.
 // Dependencies between tasks define execution order.
 type Workflow struct {
-	Defaults WorkflowDefaults `yaml:"defaults"`
-	Tasks    map[string]*Task `yaml:"tasks"`
+	Defaults         WorkflowDefaults               `yaml:"defaults"`
+	Tasks            map[string]*Task               `yaml:"tasks"`
+	SourcePath       string                         `yaml:"-"`
+	DefaultLocations map[string]ConfigLocation      `yaml:"-"`
+	TaskLocations    map[string]TaskConfigLocations `yaml:"-"`
 }

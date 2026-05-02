@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -28,27 +29,126 @@ func loadWorkflow(path string) (*Workflow, error) {
 		return nil, err
 	}
 
-	var wf Workflow
-	err = yaml.Unmarshal(data, &wf)
+	var root yaml.Node
+	err = yaml.Unmarshal(data, &root)
 	if err != nil {
 		return nil, err
 	}
 
+	var wf Workflow
+	err = root.Decode(&wf)
+	if err != nil {
+		return nil, err
+	}
+	wf.SourcePath = path
+	wf.DefaultLocations = collectDefaultLocations(&root)
+	wf.TaskLocations = collectTaskLocations(&root)
+
 	var baseDir string = filepath.Dir(path)
 	err = normalizeWorkflowDefaults(&wf, baseDir)
 	if err != nil {
-		return nil, err
+		return nil, withWorkflowLocation(path, wf, err)
 	}
 
 	for name, task := range wf.Tasks {
 		task.Name = name
 		err = applyTaskDefaults(task, wf.Defaults, baseDir)
 		if err != nil {
-			return nil, fmt.Errorf("task %s %w", name, err)
+			return nil, withTaskLocation(path, wf, name, err)
 		}
 	}
 
 	return &wf, nil
+}
+
+// collectDefaultLocations records source locations for workflow default fields.
+func collectDefaultLocations(root *yaml.Node) map[string]ConfigLocation {
+	var defaults *yaml.Node = mappingValue(rootMapping(root), "defaults")
+	if defaults == nil {
+		return nil
+	}
+	return collectFieldLocations(defaults)
+}
+
+// collectTaskLocations records source locations for task names, fields, and dependencies.
+func collectTaskLocations(root *yaml.Node) map[string]TaskConfigLocations {
+	var tasks *yaml.Node = mappingValue(rootMapping(root), "tasks")
+	if tasks == nil || tasks.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var locations map[string]TaskConfigLocations = make(map[string]TaskConfigLocations)
+	for i := 0; i+1 < len(tasks.Content); i += 2 {
+		var nameNode *yaml.Node = tasks.Content[i]
+		var taskNode *yaml.Node = tasks.Content[i+1]
+		var taskLocations TaskConfigLocations = TaskConfigLocations{
+			Name:         nodeLocation(nameNode),
+			Fields:       collectFieldLocations(taskNode),
+			Dependencies: collectDependencyLocations(taskNode),
+		}
+		locations[nameNode.Value] = taskLocations
+	}
+	return locations
+}
+
+// collectFieldLocations records source locations for mapping field names.
+func collectFieldLocations(node *yaml.Node) map[string]ConfigLocation {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var locations map[string]ConfigLocation = make(map[string]ConfigLocation)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		var key *yaml.Node = node.Content[i]
+		locations[key.Value] = nodeLocation(key)
+	}
+	return locations
+}
+
+// collectDependencyLocations records source locations for depends_on entries.
+func collectDependencyLocations(taskNode *yaml.Node) map[string]ConfigLocation {
+	var deps *yaml.Node = mappingValue(taskNode, "depends_on")
+	if deps == nil || deps.Kind != yaml.SequenceNode {
+		return nil
+	}
+
+	var locations map[string]ConfigLocation = make(map[string]ConfigLocation)
+	for _, dep := range deps.Content {
+		locations[dep.Value] = nodeLocation(dep)
+	}
+	return locations
+}
+
+// rootMapping returns the YAML document's top-level mapping node.
+func rootMapping(root *yaml.Node) *yaml.Node {
+	if root == nil {
+		return nil
+	}
+	if root.Kind == yaml.DocumentNode && len(root.Content) > 0 {
+		return root.Content[0]
+	}
+	return root
+}
+
+// mappingValue returns the value node for a mapping key.
+func mappingValue(node *yaml.Node, key string) *yaml.Node {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return node.Content[i+1]
+		}
+	}
+	return nil
+}
+
+// nodeLocation converts a YAML node position into a config location.
+func nodeLocation(node *yaml.Node) ConfigLocation {
+	if node == nil {
+		return ConfigLocation{}
+	}
+	return ConfigLocation{Line: node.Line, Column: node.Column}
 }
 
 // normalizeWorkflowDefaults validates and resolves workflow-level defaults.
@@ -129,6 +229,76 @@ func mergeEnv(defaults map[string]string, overrides map[string]string) map[strin
 	return merged
 }
 
+// withWorkflowLocation prefixes an error with its workflow default source location.
+func withWorkflowLocation(path string, wf Workflow, err error) error {
+	var field string = validationErrorField(err.Error())
+	return withLocation(path, ConfigLocation{}, err, func() ConfigLocation {
+		if wf.DefaultLocations != nil {
+			return wf.DefaultLocations[field]
+		}
+		return ConfigLocation{}
+	}, field)
+}
+
+// withTaskLocation prefixes an error with its task source location.
+func withTaskLocation(path string, wf Workflow, name string, err error) error {
+	var locations TaskConfigLocations = wf.TaskLocations[name]
+	var field string = validationErrorField(err.Error())
+	return withLocation(path, locations.Name, err, func() ConfigLocation {
+		if locations.Fields != nil {
+			return locations.Fields[field]
+		}
+		return ConfigLocation{}
+	}, field)
+}
+
+// withLocation prefixes an error with file, line, and column when available.
+func withLocation(path string, fallback ConfigLocation, err error, locate func() ConfigLocation, field string) error {
+	var location ConfigLocation
+	if locate != nil && field != "" {
+		location = locate()
+	}
+	if location.Line == 0 {
+		location = fallback
+	}
+	if location.Line == 0 {
+		return err
+	}
+	return fmt.Errorf("%s:%d:%d: %w", path, location.Line, location.Column, err)
+}
+
+// validationErrorField infers the config field named by a validation error.
+func validationErrorField(message string) string {
+	for _, field := range []string{"retries", "timeout", "cwd", "env"} {
+		if strings.Contains(message, field) {
+			return field
+		}
+	}
+	return ""
+}
+
+// validationErrorAt formats a validation error with a task or dependency location.
+func validationErrorAt(wf *Workflow, taskName string, depName string, format string, args ...interface{}) error {
+	var err error = fmt.Errorf(format, args...)
+	var location ConfigLocation
+	if wf != nil && wf.TaskLocations != nil {
+		var taskLocations TaskConfigLocations = wf.TaskLocations[taskName]
+		if depName != "" && taskLocations.Dependencies != nil {
+			location = taskLocations.Dependencies[depName]
+		}
+		if location.Line == 0 {
+			location = taskLocations.Name
+		}
+	}
+	if location.Line == 0 {
+		return err
+	}
+	if wf != nil && wf.SourcePath != "" {
+		return fmt.Errorf("%s:%d:%d: %w", wf.SourcePath, location.Line, location.Column, err)
+	}
+	return fmt.Errorf("line %d, column %d: %w", location.Line, location.Column, err)
+}
+
 // validateExecutionOrder computes a valid execution order for all tasks in the workflow.
 //
 // It ensures that:
@@ -147,7 +317,7 @@ func validateExecutionOrder(wf *Workflow) error {
 		var err error
 		// detect cycle
 		if visiting[name] {
-			return fmt.Errorf("cycle detected at task: %s", name)
+			return validationErrorAt(wf, name, "", "cycle detected at task: %s", name)
 		}
 
 		// already processed
@@ -169,7 +339,7 @@ func validateExecutionOrder(wf *Workflow) error {
 			var ok bool
 			_, ok = wf.Tasks[dep]
 			if !ok {
-				return fmt.Errorf("task %s depends on unknown task %s", name, dep)
+				return validationErrorAt(wf, name, dep, "task %s depends on unknown task %s", name, dep)
 			}
 			err = visit(dep)
 			if err != nil {

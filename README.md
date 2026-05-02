@@ -137,7 +137,7 @@ Use `--target <task>` to run just one part of a workflow, including only the dep
 Use `init` to create a starter `talos.yaml`. It refuses to overwrite an existing file unless you pass `--force`.
 Use `description` on a task to make dry-run and summary output easier to scan.
 Use `defaults` to share common `cwd`, `env`, `retries`, and `timeout` settings across tasks. Task-level values override workflow defaults.
-Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
+Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands. Validation errors include task names and config locations when Talos can identify them.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
 Use `version` to print the binary version plus commit and build timestamp metadata.
 Use `cwd` and `env` on a task when commands need to run from a specific directory or with task-local environment variables.
@@ -224,7 +224,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 ### 2. Workflow Authoring
 
-- Add richer validation errors with task names and config locations
 - Expand examples for Go, Node.js, Python, Docker, and monorepos
 
 ### 3. Execution Controls
