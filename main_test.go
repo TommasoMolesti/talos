@@ -727,6 +727,85 @@ func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowDir string = filepath.Join(tempDir, "config")
+	var appDir string = filepath.Join(tempDir, "app")
+	var overrideDir string = filepath.Join(tempDir, "override")
+	var err error = os.MkdirAll(workflowDir, 0o755)
+	if err != nil {
+		t.Fatalf("create workflow dir: %v", err)
+	}
+	err = os.MkdirAll(appDir, 0o755)
+	if err != nil {
+		t.Fatalf("create app dir: %v", err)
+	}
+	err = os.MkdirAll(overrideDir, 0o755)
+	if err != nil {
+		t.Fatalf("create override dir: %v", err)
+	}
+
+	var workflowPath string = filepath.Join(workflowDir, "talos.yaml")
+	var data string = strings.Join([]string{
+		"defaults:",
+		"  cwd: \"../app\"",
+		"  env:",
+		"    APP_ENV: \"dev\"",
+		"    SHARED: \"default\"",
+		"  retries: 2",
+		"  timeout: 30",
+		"tasks:",
+		"  inherited:",
+		"    command: \"go test ./...\"",
+		"  override:",
+		"    command: \"go build\"",
+		"    cwd: \"../override\"",
+		"    env:",
+		"      SHARED: \"task\"",
+		"      TASK_ONLY: \"yes\"",
+		"    retries: 0",
+		"    timeout: 0",
+	}, "\n")
+	err = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var wf *Workflow
+	wf, err = loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var inherited *Task = wf.Tasks["inherited"]
+	if inherited.WorkingDir != appDir {
+		t.Fatalf("expected inherited working dir %q, got %q", appDir, inherited.WorkingDir)
+	}
+	if inherited.Env["APP_ENV"] != "dev" || inherited.Env["SHARED"] != "default" {
+		t.Fatalf("expected inherited env defaults, got %#v", inherited.Env)
+	}
+	if inherited.Retries != 2 {
+		t.Fatalf("expected inherited retries 2, got %d", inherited.Retries)
+	}
+	if inherited.TimeoutDuration != 30*time.Second {
+		t.Fatalf("expected inherited timeout 30s, got %s", inherited.TimeoutDuration)
+	}
+
+	var override *Task = wf.Tasks["override"]
+	if override.WorkingDir != overrideDir {
+		t.Fatalf("expected override working dir %q, got %q", overrideDir, override.WorkingDir)
+	}
+	if override.Env["APP_ENV"] != "dev" || override.Env["SHARED"] != "task" || override.Env["TASK_ONLY"] != "yes" {
+		t.Fatalf("expected merged env with task overrides, got %#v", override.Env)
+	}
+	if override.Retries != 0 {
+		t.Fatalf("expected task retries override 0, got %d", override.Retries)
+	}
+	if override.TimeoutDuration != 0 {
+		t.Fatalf("expected task timeout override 0, got %s", override.TimeoutDuration)
+	}
+}
+
 func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "invalid-timeout.yaml")
@@ -762,5 +841,24 @@ func TestLoadWorkflow_RejectsNegativeRetries(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "retries must be zero or greater") {
 		t.Fatalf("expected retries validation error, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNegativeDefaults(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "invalid-defaults.yaml")
+	var data string = "defaults:\n  retries: -1\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected invalid defaults error")
+	}
+
+	if !strings.Contains(err.Error(), "defaults retries must be zero or greater") {
+		t.Fatalf("expected defaults validation error, got %v", err)
 	}
 }

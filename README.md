@@ -99,6 +99,13 @@ Run only one task and the dependencies needed to reach it:
 ### Create a workflow
 
 ```yaml
+defaults:
+  cwd: "."
+  env:
+    APP_ENV: "development"
+  retries: 1
+  timeout: 60
+
 tasks:
   install:
     description: "Install JavaScript dependencies"
@@ -129,6 +136,7 @@ Use `--dry-run` to inspect the execution stages and commands before you run a wo
 Use `--target <task>` to run just one part of a workflow, including only the dependencies required for that task.
 Use `init` to create a starter `talos.yaml`. It refuses to overwrite an existing file unless you pass `--force`.
 Use `description` on a task to make dry-run and summary output easier to scan.
+Use `defaults` to share common `cwd`, `env`, `retries`, and `timeout` settings across tasks. Task-level values override workflow defaults.
 Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
 Use `version` to print the binary version plus commit and build timestamp metadata.
@@ -216,7 +224,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 ### 2. Workflow Authoring
 
-- Add workflow-level defaults for `cwd`, `env`, `timeout`, and `retries`
 - Add richer validation errors with task names and config locations
 - Expand examples for Go, Node.js, Python, Docker, and monorepos
 

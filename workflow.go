@@ -16,9 +16,22 @@ type Task struct {
 	WorkingDir      string            `yaml:"-"`
 	Env             map[string]string `yaml:"env"`
 	DependsOn       []string          `yaml:"depends_on"`
-	Retries         int               `yaml:"retries"`
-	TimeoutSeconds  int               `yaml:"timeout"`
+	Retries         int               `yaml:"-"`
+	RetriesConfig   *int              `yaml:"retries"`
+	TimeoutSeconds  int               `yaml:"-"`
+	TimeoutConfig   *int              `yaml:"timeout"`
 	TimeoutDuration time.Duration     `yaml:"-"`
+}
+
+// WorkflowDefaults defines values inherited by tasks that do not override them.
+type WorkflowDefaults struct {
+	Cwd            string            `yaml:"cwd"`
+	WorkingDir     string            `yaml:"-"`
+	Env            map[string]string `yaml:"env"`
+	Retries        int               `yaml:"-"`
+	RetriesConfig  *int              `yaml:"retries"`
+	TimeoutSeconds int               `yaml:"-"`
+	TimeoutConfig  *int              `yaml:"timeout"`
 }
 
 // Workflow represents a collection of tasks forming a DAG (Directed Acyclic Graph).
@@ -26,5 +39,6 @@ type Task struct {
 // Tasks are stored in a map where the key is the task name.
 // Dependencies between tasks define execution order.
 type Workflow struct {
-	Tasks map[string]*Task `yaml:"tasks"`
+	Defaults WorkflowDefaults `yaml:"defaults"`
+	Tasks    map[string]*Task `yaml:"tasks"`
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,27 +35,94 @@ func loadWorkflow(path string) (*Workflow, error) {
 	}
 
 	var baseDir string = filepath.Dir(path)
+	err = normalizeWorkflowDefaults(&wf, baseDir)
+	if err != nil {
+		return nil, err
+	}
+
 	for name, task := range wf.Tasks {
 		task.Name = name
-		if task.Retries < 0 {
-			return nil, fmt.Errorf("task %s retries must be zero or greater", name)
-		}
-		if task.TimeoutSeconds < 0 {
-			return nil, fmt.Errorf("task %s timeout must be zero or greater", name)
-		}
-		if task.TimeoutSeconds > 0 {
-			task.TimeoutDuration = time.Duration(task.TimeoutSeconds) * time.Second
-		}
-		if task.Cwd != "" {
-			if filepath.IsAbs(task.Cwd) {
-				task.WorkingDir = filepath.Clean(task.Cwd)
-			} else {
-				task.WorkingDir = filepath.Clean(filepath.Join(baseDir, task.Cwd))
-			}
+		err = applyTaskDefaults(task, wf.Defaults, baseDir)
+		if err != nil {
+			return nil, fmt.Errorf("task %s %w", name, err)
 		}
 	}
 
 	return &wf, nil
+}
+
+func normalizeWorkflowDefaults(wf *Workflow, baseDir string) error {
+	if wf.Defaults.RetriesConfig != nil {
+		if *wf.Defaults.RetriesConfig < 0 {
+			return errors.New("defaults retries must be zero or greater")
+		}
+		wf.Defaults.Retries = *wf.Defaults.RetriesConfig
+	}
+	if wf.Defaults.TimeoutConfig != nil {
+		if *wf.Defaults.TimeoutConfig < 0 {
+			return errors.New("defaults timeout must be zero or greater")
+		}
+		wf.Defaults.TimeoutSeconds = *wf.Defaults.TimeoutConfig
+	}
+	if wf.Defaults.Cwd != "" {
+		wf.Defaults.WorkingDir = resolveWorkflowPath(baseDir, wf.Defaults.Cwd)
+	}
+	return nil
+}
+
+func applyTaskDefaults(task *Task, defaults WorkflowDefaults, baseDir string) error {
+	if task.RetriesConfig != nil {
+		if *task.RetriesConfig < 0 {
+			return errors.New("retries must be zero or greater")
+		}
+		task.Retries = *task.RetriesConfig
+	} else {
+		task.Retries = defaults.Retries
+	}
+
+	if task.TimeoutConfig != nil {
+		if *task.TimeoutConfig < 0 {
+			return errors.New("timeout must be zero or greater")
+		}
+		task.TimeoutSeconds = *task.TimeoutConfig
+	} else {
+		task.TimeoutSeconds = defaults.TimeoutSeconds
+	}
+	if task.TimeoutSeconds > 0 {
+		task.TimeoutDuration = time.Duration(task.TimeoutSeconds) * time.Second
+	}
+
+	task.Env = mergeEnv(defaults.Env, task.Env)
+
+	if task.Cwd != "" {
+		task.WorkingDir = resolveWorkflowPath(baseDir, task.Cwd)
+		return nil
+	}
+	task.Cwd = defaults.Cwd
+	task.WorkingDir = defaults.WorkingDir
+	return nil
+}
+
+func resolveWorkflowPath(baseDir string, path string) string {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	return filepath.Clean(filepath.Join(baseDir, path))
+}
+
+func mergeEnv(defaults map[string]string, overrides map[string]string) map[string]string {
+	if len(defaults) == 0 && len(overrides) == 0 {
+		return nil
+	}
+
+	var merged map[string]string = make(map[string]string, len(defaults)+len(overrides))
+	for key, value := range defaults {
+		merged[key] = value
+	}
+	for key, value := range overrides {
+		merged[key] = value
+	}
+	return merged
 }
 
 // validateExecutionOrder computes a valid execution order for all tasks in the workflow.
