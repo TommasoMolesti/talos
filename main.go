@@ -39,6 +39,7 @@ func main() {
 	os.Exit(runCLI(os.Args[1:]))
 }
 
+// runCLI dispatches parsed command-line arguments to the matching command.
 func runCLI(args []string) int {
 	if len(args) < 1 {
 		printRootUsage(os.Stderr)
@@ -296,12 +297,14 @@ func visualizeCmd(args []string) error {
 	return visualizeWorkflowFunc(wf)
 }
 
+// printVersion writes the binary version and build metadata.
 func printVersion() {
 	fmt.Fprintf(os.Stdout, "talos %s\n", version)
 	fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
 	fmt.Fprintf(os.Stdout, "built: %s\n", date)
 }
 
+// printRootUsage writes top-level command help to the given stream.
 func printRootUsage(w *os.File) {
 	fmt.Fprintln(w, "Talos executes local task workflows described as dependency-aware DAGs.")
 	fmt.Fprintln(w)

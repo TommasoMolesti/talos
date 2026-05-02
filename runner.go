@@ -35,6 +35,7 @@ type taskTimeoutError struct {
 	timeout time.Duration
 }
 
+// Error returns a human-readable timeout failure message.
 func (e taskTimeoutError) Error() string {
 	return fmt.Sprintf("task %s timed out after %s", e.task, e.timeout)
 }
@@ -82,6 +83,7 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 	return err
 }
 
+// taskDir returns the directory a task command should run from.
 func taskDir(task *Task) string {
 	if task.WorkingDir != "" {
 		return task.WorkingDir
@@ -89,6 +91,7 @@ func taskDir(task *Task) string {
 	return task.Cwd
 }
 
+// taskEnv returns the process environment with task-specific overrides applied.
 func taskEnv(env map[string]string) []string {
 	if len(env) == 0 {
 		return nil
@@ -352,6 +355,7 @@ func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 	return plan, nil
 }
 
+// newExecutionSummary initializes pending summary entries for every task.
 func newExecutionSummary(wf *Workflow) *executionSummary {
 	var tasks map[string]*taskSummary = make(map[string]*taskSummary, len(wf.Tasks))
 	for name, task := range wf.Tasks {
@@ -363,6 +367,7 @@ func newExecutionSummary(wf *Workflow) *executionSummary {
 	return &executionSummary{Tasks: tasks}
 }
 
+// record stores the final result for one task in the execution summary.
 func (s *executionSummary) record(result taskResult) {
 	var task *taskSummary = s.Tasks[result.name]
 	if task == nil {
@@ -374,6 +379,7 @@ func (s *executionSummary) record(result taskResult) {
 	task.Timeout = result.timeout
 }
 
+// markPendingAsSkipped marks never-started tasks as skipped after fail-fast cancellation.
 func (s *executionSummary) markPendingAsSkipped() {
 	for _, task := range s.Tasks {
 		if task.Status == taskStatusPending {

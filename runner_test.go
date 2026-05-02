@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// captureStdout captures stdout until the returned restore function is called.
 func captureStdout(t *testing.T) (*bytes.Buffer, func()) {
 	t.Helper()
 

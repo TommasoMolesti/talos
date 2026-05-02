@@ -43,6 +43,7 @@ func BuildMermaidGraph(wf *Workflow) string {
 	return b.String()
 }
 
+// sortedTaskNames returns task names in deterministic order.
 func sortedTaskNames(wf *Workflow) []string {
 	var names []string = make([]string, 0, len(wf.Tasks))
 	for name := range wf.Tasks {
@@ -52,6 +53,7 @@ func sortedTaskNames(wf *Workflow) []string {
 	return names
 }
 
+// mermaidID converts a task name into a Mermaid-safe node identifier.
 func mermaidID(name string) string {
 	var b strings.Builder
 	for _, r := range name {

@@ -51,6 +51,7 @@ func loadWorkflow(path string) (*Workflow, error) {
 	return &wf, nil
 }
 
+// normalizeWorkflowDefaults validates and resolves workflow-level defaults.
 func normalizeWorkflowDefaults(wf *Workflow, baseDir string) error {
 	if wf.Defaults.RetriesConfig != nil {
 		if *wf.Defaults.RetriesConfig < 0 {
@@ -70,6 +71,7 @@ func normalizeWorkflowDefaults(wf *Workflow, baseDir string) error {
 	return nil
 }
 
+// applyTaskDefaults merges workflow defaults into one task.
 func applyTaskDefaults(task *Task, defaults WorkflowDefaults, baseDir string) error {
 	if task.RetriesConfig != nil {
 		if *task.RetriesConfig < 0 {
@@ -103,6 +105,7 @@ func applyTaskDefaults(task *Task, defaults WorkflowDefaults, baseDir string) er
 	return nil
 }
 
+// resolveWorkflowPath resolves a workflow-relative path to a clean path.
 func resolveWorkflowPath(baseDir string, path string) string {
 	if filepath.IsAbs(path) {
 		return filepath.Clean(path)
@@ -110,6 +113,7 @@ func resolveWorkflowPath(baseDir string, path string) string {
 	return filepath.Clean(filepath.Join(baseDir, path))
 }
 
+// mergeEnv combines default and task-specific environment variables.
 func mergeEnv(defaults map[string]string, overrides map[string]string) map[string]string {
 	if len(defaults) == 0 && len(overrides) == 0 {
 		return nil

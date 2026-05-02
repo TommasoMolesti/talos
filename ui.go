@@ -146,6 +146,7 @@ func PrintSummary(summary *executionSummary) {
 	}
 }
 
+// formatTaskLabel combines a task name with its optional description.
 func formatTaskLabel(name string, description string) string {
 	if description == "" {
 		return name

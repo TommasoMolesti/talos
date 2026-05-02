@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// runCLIWithCapturedStderr runs the CLI and returns anything written to stderr.
 func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
 	t.Helper()
 
@@ -41,6 +42,7 @@ func runCLIWithCapturedStderr(t *testing.T, args []string) (int, string) {
 	return exitCode, buf.String()
 }
 
+// runCLIWithCapturedStdout runs the CLI and returns anything written to stdout.
 func runCLIWithCapturedStdout(t *testing.T, args []string) (int, string) {
 	t.Helper()
 
