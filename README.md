@@ -36,6 +36,25 @@ Install Talos with Go:
 go install github.com/TommasoMolesti/talos@latest
 ```
 
+Verify the installed binary:
+
+```bash
+talos version
+```
+
+If your shell cannot find `talos`, add Go's binary directory to your `PATH`:
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+For `zsh`, persist that setting:
+
+```bash
+echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.zshrc
+source ~/.zshrc
+```
+
 Build the binary:
 
 ```bash
