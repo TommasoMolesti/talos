@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -18,6 +19,15 @@ var (
 	validateWorkflowFunc  = validateWorkflow
 	visualizeWorkflowFunc = VisualizeWorkflow
 )
+
+const starterWorkflow = `tasks:
+  setup:
+    command: "echo preparing project"
+
+  test:
+    command: "go test ./..."
+    depends_on: ["setup"]
+`
 
 // main is the entry point of the Talos CLI application.
 //
@@ -36,6 +46,16 @@ func runCLI(args []string) int {
 	switch args[0] {
 	case "-h", "--help", "help":
 		printRootUsage(os.Stdout)
+		return 0
+	case "init":
+		var err error = initCmd(args[1:])
+		if err != nil {
+			if err == flag.ErrHelp {
+				return 0
+			}
+			fmt.Fprintln(os.Stderr, "Init failed:", err)
+			return 1
+		}
 		return 0
 	case "run":
 		var err error = runCmd(args[1:])
@@ -76,6 +96,67 @@ func runCLI(args []string) int {
 		printRootUsage(os.Stderr)
 		return 1
 	}
+}
+
+// initCmd handles the "init" command and its flags.
+func initCmd(args []string) error {
+	var fs *flag.FlagSet = flag.NewFlagSet("init", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: talos init [flags]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Create a starter workflow file.")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Examples:")
+		fmt.Fprintln(os.Stderr, "  talos init")
+		fmt.Fprintln(os.Stderr, "  talos init --file ./workflows/dev.yaml")
+		fmt.Fprintln(os.Stderr, "  talos init --force")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Flags:")
+		fs.PrintDefaults()
+	}
+
+	var workflowFile *string = fs.String("file", "talos.yaml", "path to write the starter workflow")
+	var force *bool = fs.Bool("force", false, "overwrite an existing workflow file")
+
+	var err error = fs.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			return err
+		}
+		return fmt.Errorf("parse flags: %w", err)
+	}
+
+	var flag int = os.O_WRONLY | os.O_CREATE | os.O_EXCL
+	if *force {
+		flag = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	}
+
+	var dir string = filepath.Dir(*workflowFile)
+	if dir != "." {
+		err = os.MkdirAll(dir, 0o755)
+		if err != nil {
+			return fmt.Errorf("create workflow directory: %w", err)
+		}
+	}
+
+	var file *os.File
+	file, err = os.OpenFile(*workflowFile, flag, 0o644)
+	if err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("%s already exists; use --force to overwrite", *workflowFile)
+		}
+		return fmt.Errorf("create workflow file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(starterWorkflow)
+	if err != nil {
+		return fmt.Errorf("write workflow file: %w", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "[talos] Created starter workflow at %s\n", *workflowFile)
+	return nil
 }
 
 // runCmd handles the "run" command and its flags.
@@ -226,12 +307,14 @@ func printRootUsage(w *os.File) {
 	fmt.Fprintln(w, "  talos <command> [flags]")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Commands:")
+	fmt.Fprintln(w, "  init       Create a starter workflow file")
 	fmt.Fprintln(w, "  run        Execute a workflow")
 	fmt.Fprintln(w, "  validate   Check workflow syntax and dependency correctness")
 	fmt.Fprintln(w, "  visualize  Print the workflow DAG as Mermaid")
 	fmt.Fprintln(w, "  version    Print version and build metadata")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Examples:")
+	fmt.Fprintln(w, "  talos init")
 	fmt.Fprintln(w, "  talos run --dry-run")
 	fmt.Fprintln(w, "  talos run --target build")
 	fmt.Fprintln(w, "  talos validate --file ./workflows/dev.yaml")

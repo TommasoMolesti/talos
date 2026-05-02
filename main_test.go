@@ -123,6 +123,23 @@ func TestValidateCLI_HelpReturnsSuccess(t *testing.T) {
 	}
 }
 
+func TestInitCLI_HelpReturnsSuccess(t *testing.T) {
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"init", "-h"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Usage: talos init [flags]") || !strings.Contains(output, "talos init --file ./workflows/dev.yaml") {
+		t.Fatalf("expected help output, got %q", output)
+	}
+
+	if !strings.Contains(output, "-file") || !strings.Contains(output, "-force") {
+		t.Fatalf("expected help output, got %q", output)
+	}
+}
+
 func TestCLI_RootHelpFlagReturnsSuccess(t *testing.T) {
 	var exitCode int
 	var output string
@@ -214,6 +231,77 @@ func TestCLI_UnknownCommandPrintsGuidance(t *testing.T) {
 
 	if !strings.Contains(output, "Unknown command: unknown") || !strings.Contains(output, "Commands:") {
 		t.Fatalf("expected unknown command guidance, got %q", output)
+	}
+}
+
+func TestInitCmd_WritesStarterWorkflow(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "workflows", "dev.yaml")
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"init", "--file", workflowPath})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "Created starter workflow") {
+		t.Fatalf("expected success output, got %q", output)
+	}
+
+	var data []byte
+	var err error
+	data, err = os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read starter workflow: %v", err)
+	}
+
+	if string(data) != starterWorkflow {
+		t.Fatalf("expected starter workflow, got %q", string(data))
+	}
+}
+
+func TestInitCmd_RefusesToOverwriteExistingWorkflow(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "talos.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks: {}\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow: %v", err)
+	}
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"init", "--file", workflowPath})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "already exists; use --force to overwrite") {
+		t.Fatalf("expected overwrite guidance, got %q", output)
+	}
+}
+
+func TestInitCmd_ForceOverwritesExistingWorkflow(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "talos.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks: {}\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow: %v", err)
+	}
+
+	err = initCmd([]string{"--file", workflowPath, "--force"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var data []byte
+	data, err = os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read starter workflow: %v", err)
+	}
+
+	if string(data) != starterWorkflow {
+		t.Fatalf("expected starter workflow, got %q", string(data))
 	}
 }
 
