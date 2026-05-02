@@ -194,7 +194,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 ### 1. Project Foundation
 
-- Add release builds for Linux, macOS, and Windows
 - Add installation instructions for `go install`
 - Tag the first usable release
 

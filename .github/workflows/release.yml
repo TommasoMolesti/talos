@@ -1,0 +1,64 @@
+name: Release Builds
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            ext: ""
+          - goos: linux
+            goarch: arm64
+            ext: ""
+          - goos: darwin
+            goarch: amd64
+            ext: ""
+          - goos: darwin
+            goarch: arm64
+            ext: ""
+          - goos: windows
+            goarch: amd64
+            ext: ".exe"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
+            version="dev"
+          fi
+          built_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          output="dist/talos-${GOOS}-${GOARCH}${EXT}"
+          CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${version} -X main.commit=${GITHUB_SHA} -X main.date=${built_at}" -o "${output}" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: talos-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          if-no-files-found: error
