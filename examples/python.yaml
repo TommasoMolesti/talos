@@ -1,0 +1,25 @@
+defaults:
+  cwd: "."
+  env:
+    PYTHONUNBUFFERED: "1"
+  timeout: 120
+
+tasks:
+  install:
+    description: "Install Python dependencies"
+    command: "python -m pip install -r requirements.txt"
+
+  lint:
+    description: "Run Ruff checks"
+    command: "ruff check ."
+    depends_on: ["install"]
+
+  test:
+    description: "Run pytest"
+    command: "pytest"
+    depends_on: ["install"]
+
+  package:
+    description: "Build Python package artifacts"
+    command: "python -m build"
+    depends_on: ["lint", "test"]

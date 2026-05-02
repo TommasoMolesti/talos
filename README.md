@@ -145,6 +145,22 @@ Use `retries` on a task to retry transient failures before Talos gives up.
 Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
 Use `talos -h` or `talos <command> -h` to see command-specific examples and flag guidance.
 
+## Examples
+
+The `examples/` directory includes starter workflows for common project shapes:
+
+- [Go](examples/go.yaml)
+- [Node.js](examples/node.yaml)
+- [Python](examples/python.yaml)
+- [Docker](examples/docker.yaml)
+- [Monorepo](examples/monorepo.yaml)
+
+Preview any example without running commands:
+
+```bash
+./talos run --file examples/go.yaml --dry-run
+```
+
 Build a release-style binary with metadata:
 
 ```bash
@@ -222,7 +238,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 This version should be good enough for developers to install, try on real local workflows, and understand from the documentation.
 
-- Expand examples for Go, Node.js, Python, Docker, and monorepos
 - Add documentation for common workflow patterns
 - Publish repeatable GitHub releases
 - Tag the first usable release

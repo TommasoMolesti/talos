@@ -1,0 +1,23 @@
+defaults:
+  cwd: "."
+  timeout: 120
+
+tasks:
+  fmt:
+    description: "Check Go formatting"
+    command: "test -z \"$(gofmt -l .)\""
+
+  vet:
+    description: "Run Go vet"
+    command: "go vet ./..."
+    depends_on: ["fmt"]
+
+  test:
+    description: "Run Go tests"
+    command: "go test ./..."
+    depends_on: ["vet"]
+
+  build:
+    description: "Build the binary"
+    command: "go build -o bin/app ."
+    depends_on: ["test"]

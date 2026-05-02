@@ -1,0 +1,31 @@
+defaults:
+  cwd: "."
+  timeout: 180
+
+tasks:
+  api-test:
+    description: "Run backend tests"
+    command: "go test ./..."
+    cwd: "./services/api"
+
+  web-install:
+    description: "Install frontend dependencies"
+    command: "npm install"
+    cwd: "./apps/web"
+
+  web-test:
+    description: "Run frontend tests"
+    command: "npm test"
+    cwd: "./apps/web"
+    depends_on: ["web-install"]
+
+  web-build:
+    description: "Build frontend assets"
+    command: "npm run build"
+    cwd: "./apps/web"
+    depends_on: ["web-test"]
+
+  package:
+    description: "Package the full application"
+    command: "tar -czf dist/app.tar.gz services apps"
+    depends_on: ["api-test", "web-build"]

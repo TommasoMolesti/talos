@@ -1,0 +1,25 @@
+defaults:
+  cwd: "."
+  env:
+    NODE_ENV: "development"
+  timeout: 120
+
+tasks:
+  install:
+    description: "Install package dependencies"
+    command: "npm install"
+
+  lint:
+    description: "Run JavaScript linting"
+    command: "npm run lint"
+    depends_on: ["install"]
+
+  test:
+    description: "Run unit tests"
+    command: "npm test"
+    depends_on: ["install"]
+
+  build:
+    description: "Build production assets"
+    command: "npm run build"
+    depends_on: ["lint", "test"]

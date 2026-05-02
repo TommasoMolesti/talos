@@ -1,0 +1,23 @@
+defaults:
+  cwd: "."
+  timeout: 180
+
+tasks:
+  build:
+    description: "Build the application image"
+    command: "docker build -t local/app:dev ."
+
+  up:
+    description: "Start local services"
+    command: "docker compose up -d"
+    depends_on: ["build"]
+
+  test:
+    description: "Run integration tests against local services"
+    command: "docker compose run --rm app npm test"
+    depends_on: ["up"]
+
+  down:
+    description: "Stop local services"
+    command: "docker compose down"
+    depends_on: ["test"]
