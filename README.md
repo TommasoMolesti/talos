@@ -169,6 +169,10 @@ Build a release-style binary with metadata:
 go build -ldflags "-X main.version=0.1.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
 ```
 
+## Releases
+
+Talos publishes binaries and checksums from version tags. See [Release Process](docs/releases.md) for maintainer instructions.
+
 ## How It Works
 
 Talos parses your workflow into a Directed Acyclic Graph (DAG):
@@ -235,13 +239,6 @@ This preference is mainly about `if` statements. Regular `for` loops can keep no
 Talos is focused on becoming a practical local-first workflow runner for developers who want dependency-aware task execution without running external infrastructure.
 
 The roadmap is intentionally scoped around reliability, usability, and distribution before adding heavier orchestration features. Versions before `v1.0.0` may still refine the workflow schema and CLI behavior.
-
-### v0.1.0 - First Usable Release
-
-This version should be good enough for developers to install, try on real local workflows, and understand from the documentation.
-
-- Publish repeatable GitHub releases
-- Tag the first usable release
 
 ### v0.2.0 - Execution Controls
 
