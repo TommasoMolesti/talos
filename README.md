@@ -161,6 +161,8 @@ Preview any example without running commands:
 ./talos run --file examples/go.yaml --dry-run
 ```
 
+For workflow structure guidance, see [Common Workflow Patterns](docs/patterns.md).
+
 Build a release-style binary with metadata:
 
 ```bash
@@ -238,7 +240,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 This version should be good enough for developers to install, try on real local workflows, and understand from the documentation.
 
-- Add documentation for common workflow patterns
 - Publish repeatable GitHub releases
 - Tag the first usable release
 
