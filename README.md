@@ -216,17 +216,18 @@ This preference is mainly about `if` statements. Regular `for` loops can keep no
 
 Talos is focused on becoming a practical local-first workflow runner for developers who want dependency-aware task execution without running external infrastructure.
 
-The roadmap is intentionally scoped around reliability, usability, and distribution before adding heavier orchestration features.
+The roadmap is intentionally scoped around reliability, usability, and distribution before adding heavier orchestration features. Versions before `v1.0.0` may still refine the workflow schema and CLI behavior.
 
-### 1. Project Foundation
+### v0.1.0 - First Usable Release
 
-- Tag the first usable release
-
-### 2. Workflow Authoring
+This version should be good enough for developers to install, try on real local workflows, and understand from the documentation.
 
 - Expand examples for Go, Node.js, Python, Docker, and monorepos
+- Add documentation for common workflow patterns
+- Publish repeatable GitHub releases
+- Tag the first usable release
 
-### 3. Execution Controls
+### v0.2.0 - Execution Controls
 
 - Add configurable shell support
 - Add `continue_on_error` for non-blocking tasks
@@ -235,23 +236,30 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 - Add clearer behavior for canceled, skipped, and downstream tasks
 - Add optional machine-readable output for automation use cases
 
-### 4. Developer Experience
+### v0.3.0 - Developer Experience
 
 - Improve CLI output for long-running workflows
 - Add compact and verbose output modes
 - Add better task timing and execution summary details
 - Add Mermaid export options, such as writing to a file
-- Add documentation for common workflow patterns
-
-### 5. Distribution And Adoption
-
-- Publish repeatable GitHub releases
-- Add Homebrew installation support
 - Add a small demo project showing Talos in a real development workflow
+
+### v0.4.0 - Distribution And Adoption
+
+- Add Homebrew installation support
 - Add contribution guidelines
 - Add issue templates for bugs and feature requests
 
-### Later Ideas
+### v1.0.0 - Stable Local Workflow Runner
+
+This version should come after the core workflow schema, execution semantics, and release process feel stable enough to support without breaking early users.
+
+- Freeze the supported workflow schema for `v1.x`
+- Document compatibility expectations for workflow files
+- Audit defaults, failure behavior, and CLI output for consistency
+- Complete a release candidate pass against real Go, Node.js, Python, Docker, and monorepo workflows
+
+### Post-v1 Ideas
 
 These are intentionally not the short-term focus, but may become useful if Talos grows:
 
