@@ -30,10 +30,24 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 
 ## Quick Start
 
-Install Talos with Go:
+Install Talos:
 
 ```bash
-go install github.com/TommasoMolesti/talos@latest
+sh -c "$(curl -sfL https://raw.githubusercontent.com/TommasoMolesti/talos/main/scripts/install.sh)"
+```
+
+Install a specific version:
+
+```bash
+VER=v0.1.0 sh -c "$(curl -sfL https://raw.githubusercontent.com/TommasoMolesti/talos/main/scripts/install.sh)"
+```
+
+The install script uses `go install github.com/TommasoMolesti/talos@latest` by default and prints a `PATH` hint if your shell cannot find `talos` afterward.
+
+When working from a local checkout, you can run the same script directly:
+
+```bash
+./scripts/install.sh
 ```
 
 Verify the installed binary:
@@ -42,18 +56,19 @@ Verify the installed binary:
 talos version
 ```
 
-If your shell cannot find `talos`, add Go's binary directory to your `PATH`:
+You can also install directly with Go:
 
 ```bash
-export PATH="$PATH:$(go env GOPATH)/bin"
+go install github.com/TommasoMolesti/talos@latest
 ```
 
-For `zsh`, persist that setting:
+Uninstall Talos:
 
 ```bash
-echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.zshrc
-source ~/.zshrc
+sh -c "$(curl -sfL https://raw.githubusercontent.com/TommasoMolesti/talos/main/scripts/uninstall.sh)"
 ```
+
+Talos does not create background services or global config files. To fully undo the install setup, remove the Go bin `PATH` line from your shell config if you added it only for Talos.
 
 Build the binary:
 
