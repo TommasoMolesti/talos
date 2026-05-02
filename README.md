@@ -30,6 +30,12 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 
 ## Quick Start
 
+Install Talos with Go:
+
+```bash
+go install github.com/TommasoMolesti/talos@latest
+```
+
 Build the binary:
 
 ```bash
@@ -194,7 +200,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 ### 1. Project Foundation
 
-- Add installation instructions for `go install`
 - Tag the first usable release
 
 ### 2. Workflow Authoring
