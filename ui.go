@@ -28,7 +28,8 @@ func PrintDryRun(plan [][]string, wf *Workflow) {
 	for i, stage := range plan {
 		fmt.Printf("%s Stage %d: %s\n", run("▶"), i+1, strings.Join(stage, ", "))
 		for _, name := range stage {
-			fmt.Printf("  - %s: %s\n", name, wf.Tasks[name].Command)
+			var task *Task = wf.Tasks[name]
+			fmt.Printf("  - %s: %s\n", formatTaskLabel(name, task.Description), task.Command)
 		}
 		fmt.Println()
 	}
@@ -100,17 +101,18 @@ func PrintSummary(summary *executionSummary) {
 
 	for name, task := range summary.Tasks {
 		counts[task.Status]++
+		var label string = formatTaskLabel(name, task.Description)
 		if task.Attempts > 1 {
-			retried = append(retried, fmt.Sprintf("%s (%d retries)", name, task.Attempts-1))
+			retried = append(retried, fmt.Sprintf("%s (%d retries)", label, task.Attempts-1))
 		}
 		if task.Status == taskStatusTimedOut {
-			timedOut = append(timedOut, fmt.Sprintf("%s (%s)", name, task.Timeout))
+			timedOut = append(timedOut, fmt.Sprintf("%s (%s)", label, task.Timeout))
 		}
 		if task.Status == taskStatusCanceled {
-			canceled = append(canceled, name)
+			canceled = append(canceled, label)
 		}
 		if task.Status == taskStatusSkipped {
-			skippedTasks = append(skippedTasks, name)
+			skippedTasks = append(skippedTasks, label)
 		}
 	}
 
@@ -142,4 +144,11 @@ func PrintSummary(summary *executionSummary) {
 	if len(skippedTasks) > 0 {
 		fmt.Printf("  skipped: %s\n", strings.Join(skippedTasks, ", "))
 	}
+}
+
+func formatTaskLabel(name string, description string) string {
+	if description == "" {
+		return name
+	}
+	return fmt.Sprintf("%s - %s", name, description)
 }

@@ -101,12 +101,15 @@ Run only one task and the dependencies needed to reach it:
 ```yaml
 tasks:
   install:
+    description: "Install JavaScript dependencies"
     command: "npm install"
 
   db:
+    description: "Start the local database"
     command: "docker-compose up -d"
 
   migrate:
+    description: "Run backend database migrations"
     command: "npm run migrate"
     cwd: "./backend"
     env:
@@ -116,6 +119,7 @@ tasks:
     timeout: 30
 
   dev:
+    description: "Start the development server"
     command: "npm run dev"
     depends_on: ["install", "migrate"]
 ```
@@ -124,6 +128,7 @@ By default, Talos looks for `talos.yaml` in the current directory, but you can o
 Use `--dry-run` to inspect the execution stages and commands before you run a workflow for real.
 Use `--target <task>` to run just one part of a workflow, including only the dependencies required for that task.
 Use `init` to create a starter `talos.yaml`. It refuses to overwrite an existing file unless you pass `--force`.
+Use `description` on a task to make dry-run and summary output easier to scan.
 Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
 Use `version` to print the binary version plus commit and build timestamp metadata.
@@ -211,7 +216,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 
 ### 2. Workflow Authoring
 
-- Add task descriptions for better dry-run and summary output
 - Add workflow-level defaults for `cwd`, `env`, `timeout`, and `retries`
 - Add richer validation errors with task names and config locations
 - Expand examples for Go, Node.js, Python, Docker, and monorepos

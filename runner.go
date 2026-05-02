@@ -51,10 +51,11 @@ const (
 )
 
 type taskSummary struct {
-	Status   taskStatus
-	Attempts int
-	Duration time.Duration
-	Timeout  time.Duration
+	Description string
+	Status      taskStatus
+	Attempts    int
+	Duration    time.Duration
+	Timeout     time.Duration
 }
 
 type executionSummary struct {
@@ -353,8 +354,11 @@ func buildExecutionPlan(wf *Workflow) ([][]string, error) {
 
 func newExecutionSummary(wf *Workflow) *executionSummary {
 	var tasks map[string]*taskSummary = make(map[string]*taskSummary, len(wf.Tasks))
-	for name := range wf.Tasks {
-		tasks[name] = &taskSummary{Status: taskStatusPending}
+	for name, task := range wf.Tasks {
+		tasks[name] = &taskSummary{
+			Description: task.Description,
+			Status:      taskStatusPending,
+		}
 	}
 	return &executionSummary{Tasks: tasks}
 }

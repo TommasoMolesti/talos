@@ -664,6 +664,26 @@ func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_ParsesTaskDescription(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "description.yaml")
+	var data string = "tasks:\n  build:\n    description: \"Compile the app\"\n    command: \"go build\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var wf *Workflow
+	wf, err = loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if wf.Tasks["build"].Description != "Compile the app" {
+		t.Fatalf("expected description to be parsed, got %q", wf.Tasks["build"].Description)
+	}
+}
+
 func TestLoadWorkflow_ResolvesTaskWorkingDirAndEnv(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowDir string = filepath.Join(tempDir, "config")

@@ -22,9 +22,11 @@ var (
 
 const starterWorkflow = `tasks:
   setup:
+    description: "Prepare the project"
     command: "echo preparing project"
 
   test:
+    description: "Run the test suite"
     command: "go test ./..."
     depends_on: ["setup"]
 `

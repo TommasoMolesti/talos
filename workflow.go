@@ -10,6 +10,7 @@ import "time"
 // - optional dependencies (DependsOn) referencing other task names
 type Task struct {
 	Name            string            `yaml:"-"`
+	Description     string            `yaml:"description"`
 	Command         string            `yaml:"command"`
 	Cwd             string            `yaml:"cwd"`
 	WorkingDir      string            `yaml:"-"`

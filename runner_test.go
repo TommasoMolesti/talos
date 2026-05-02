@@ -252,7 +252,7 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"A": {Name: "A", Command: "echo A"},
+			"A": {Name: "A", Description: "Prepare workspace", Command: "echo A"},
 			"B": {Name: "B", Command: "echo B", DependsOn: []string{"A"}},
 			"C": {Name: "C", Command: "echo C", DependsOn: []string{"A"}},
 			"D": {Name: "D", Command: "echo D", DependsOn: []string{"B", "C"}},
@@ -272,6 +272,9 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 	var output string = stdout.String()
 	if !strings.Contains(output, "Stage 1: A") {
 		t.Fatalf("expected stage 1 output, got %q", output)
+	}
+	if !strings.Contains(output, "A - Prepare workspace: echo A") {
+		t.Fatalf("expected description in dry-run output, got %q", output)
 	}
 	if !strings.Contains(output, "Stage 2: B, C") {
 		t.Fatalf("expected stage 2 output, got %q", output)
@@ -330,7 +333,7 @@ func TestRunWorkflowParallel_RetriesTaskUntilSuccess(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
+			"flaky": {Name: "flaky", Description: "Retry transient command", Command: "echo flaky", Retries: 2},
 		},
 	}
 
@@ -359,7 +362,7 @@ func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"flaky": {Name: "flaky", Command: "echo flaky", Retries: 2},
+			"flaky": {Name: "flaky", Description: "Retry transient command", Command: "echo flaky", Retries: 2},
 		},
 	}
 
@@ -380,7 +383,7 @@ func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
 	if !strings.Contains(output, "total=1 success=1 failed=0 timed_out=0 canceled=0 skipped=0") {
 		t.Fatalf("expected summary counts, got %q", output)
 	}
-	if !strings.Contains(output, "retries: flaky (2 retries)") {
+	if !strings.Contains(output, "retries: flaky - Retry transient command (2 retries)") {
 		t.Fatalf("expected retry details, got %q", output)
 	}
 }
@@ -434,8 +437,8 @@ func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testi
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"slow":    {Name: "slow", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
-			"blocked": {Name: "blocked", Command: "echo blocked", DependsOn: []string{"slow"}},
+			"slow":    {Name: "slow", Description: "Wait too long", Command: "sleep 1", TimeoutDuration: 20 * time.Millisecond},
+			"blocked": {Name: "blocked", Description: "Runs after slow", Command: "echo blocked", DependsOn: []string{"slow"}},
 		},
 	}
 
@@ -455,10 +458,10 @@ func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testi
 	if !strings.Contains(output, "total=2 success=0 failed=0 timed_out=1 canceled=0 skipped=1") {
 		t.Fatalf("expected timeout and skip counts, got %q", output)
 	}
-	if !strings.Contains(output, "timeouts: slow (20ms)") {
+	if !strings.Contains(output, "timeouts: slow - Wait too long (20ms)") {
 		t.Fatalf("expected timeout details, got %q", output)
 	}
-	if !strings.Contains(output, "skipped: blocked") {
+	if !strings.Contains(output, "skipped: blocked - Runs after slow") {
 		t.Fatalf("expected skipped task details, got %q", output)
 	}
 	if !strings.Contains(output, "[talos] Failed in") {
