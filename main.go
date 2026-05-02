@@ -7,6 +7,12 @@ import (
 )
 
 var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
+var (
 	loadWorkflowFunc      = loadWorkflow
 	runWorkflowFunc       = RunWorkflowParallel
 	validateWorkflowFunc  = validateWorkflow
@@ -60,6 +66,9 @@ func runCLI(args []string) int {
 			fmt.Fprintln(os.Stderr, "Visualization failed:", err)
 			return 1
 		}
+		return 0
+	case "version":
+		printVersion()
 		return 0
 	default:
 		fmt.Fprintln(os.Stderr, "Unknown command:", args[0])
@@ -204,6 +213,12 @@ func visualizeCmd(args []string) error {
 	return visualizeWorkflowFunc(wf)
 }
 
+func printVersion() {
+	fmt.Fprintf(os.Stdout, "talos %s\n", version)
+	fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
+	fmt.Fprintf(os.Stdout, "built: %s\n", date)
+}
+
 func printRootUsage(w *os.File) {
 	fmt.Fprintln(w, "Talos executes local task workflows described as dependency-aware DAGs.")
 	fmt.Fprintln(w)
@@ -214,12 +229,14 @@ func printRootUsage(w *os.File) {
 	fmt.Fprintln(w, "  run        Execute a workflow")
 	fmt.Fprintln(w, "  validate   Check workflow syntax and dependency correctness")
 	fmt.Fprintln(w, "  visualize  Print the workflow DAG as Mermaid")
+	fmt.Fprintln(w, "  version    Print version and build metadata")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Examples:")
 	fmt.Fprintln(w, "  talos run --dry-run")
 	fmt.Fprintln(w, "  talos run --target build")
 	fmt.Fprintln(w, "  talos validate --file ./workflows/dev.yaml")
 	fmt.Fprintln(w, "  talos visualize")
+	fmt.Fprintln(w, "  talos version")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Use \"talos <command> -h\" for command-specific help.")
 }

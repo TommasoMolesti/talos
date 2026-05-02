@@ -152,6 +152,32 @@ func TestCLI_HelpCommandReturnsSuccess(t *testing.T) {
 	}
 }
 
+func TestCLI_VersionCommandPrintsBuildMetadata(t *testing.T) {
+	var origVersion string = version
+	var origCommit string = commit
+	var origDate string = date
+	defer func() {
+		version = origVersion
+		commit = origCommit
+		date = origDate
+	}()
+
+	version = "1.2.3"
+	commit = "abc123"
+	date = "2026-05-02T10:11:12Z"
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"version"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "talos 1.2.3") || !strings.Contains(output, "commit: abc123") || !strings.Contains(output, "built: 2026-05-02T10:11:12Z") {
+		t.Fatalf("expected version output, got %q", output)
+	}
+}
+
 func TestCLI_NoArgsPrintsRootUsage(t *testing.T) {
 	var exitCode int
 	var output string

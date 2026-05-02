@@ -66,6 +66,12 @@ Render the workflow as a Mermaid DAG:
 ./talos visualize
 ```
 
+Print version and build metadata:
+
+```bash
+./talos version
+```
+
 Limit parallelism:
 
 ```bash
@@ -107,10 +113,17 @@ Use `--dry-run` to inspect the execution stages and commands before you run a wo
 Use `--target <task>` to run just one part of a workflow, including only the dependencies required for that task.
 Use `validate` to verify YAML parsing, task settings, and DAG correctness without starting any commands.
 Use `visualize` to export the workflow graph in Mermaid format for README snippets or architecture docs.
+Use `version` to print the binary version plus commit and build timestamp metadata.
 Use `cwd` and `env` on a task when commands need to run from a specific directory or with task-local environment variables.
 Use `retries` on a task to retry transient failures before Talos gives up.
 Use `timeout` on a task to fail fast when a command exceeds its expected runtime. Timeout values are expressed as seconds.
 Use `talos -h` or `talos <command> -h` to see command-specific examples and flag guidance.
+
+Build a release-style binary with metadata:
+
+```bash
+go build -ldflags "-X main.version=0.1.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
+```
 
 ## How It Works
 
@@ -184,7 +197,6 @@ The roadmap is intentionally scoped around reliability, usability, and distribut
 - Add GitHub Actions for `go test ./...`
 - Add linting and formatting checks
 - Add release builds for Linux, macOS, and Windows
-- Add version reporting with `talos version`
 - Add installation instructions for `go install`
 - Tag the first usable release
 
