@@ -1,8 +1,8 @@
-# Common Workflow Patterns
+# Workflow Patterns
 
-These patterns show how to structure local Talos workflows for common developer tasks. Use `talos run --dry-run` before running a new workflow so you can inspect the execution plan.
+These recipes show practical ways to structure local Talos workflows. Use `talos run --dry-run` before running a new workflow so you can inspect the execution plan.
 
-## Linear Setup, Test, Build
+## Linear Workflow
 
 Use a linear chain when each step needs the previous step to succeed.
 
@@ -53,7 +53,7 @@ Use `--target` when you only want one task plus its required dependencies.
 talos run --target build
 ```
 
-Given the parallel-checks workflow above, Talos runs `install`, `lint`, `test`, and `build`, but skips unrelated tasks.
+Given the parallel checks workflow above, Talos runs `install`, `lint`, `test`, and `build`, but skips unrelated tasks.
 
 ## Shared Defaults
 
