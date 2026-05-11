@@ -6,24 +6,6 @@ The roadmap is intentionally narrow. Talos should become easier to understand be
 
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
 
-## `v0.2.0`: Execution Semantics
-
-Goal: make task behavior explicit, predictable, and easy to reason about.
-
-Status: released.
-
-Work in this release should stay PR-sized and easy to review.
-
-Planned work:
-
-- No remaining planned work.
-
-Done when:
-
-- Workflow authors can understand what happens after any task failure.
-- Failure behavior is covered by docs and tests.
-- Existing workflows continue to run without changes.
-
 ## `v0.3.0`: Simple Portability
 
 Goal: let workflows choose a shell without turning Talos into a cross-platform command abstraction layer.
