@@ -29,6 +29,8 @@ tasks:
 
 Task names must be unique. The task name is used by `depends_on`, `--target`, dry-run output, and execution summaries.
 
+Every task must define a non-empty `command`. Talos validates this before dry-run or execution.
+
 ## Dependencies
 
 Use `depends_on` when a task must wait for another task.

@@ -104,10 +104,10 @@ func TestRunWorkflowParallel_AllTasksExecuted(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"A": {Name: "A"},
-			"B": {Name: "B", DependsOn: []string{"A"}},
-			"C": {Name: "C", DependsOn: []string{"A"}},
-			"D": {Name: "D", DependsOn: []string{"B", "C"}},
+			"A": {Name: "A", Command: "echo A"},
+			"B": {Name: "B", Command: "echo B", DependsOn: []string{"A"}},
+			"C": {Name: "C", Command: "echo C", DependsOn: []string{"A"}},
+			"D": {Name: "D", Command: "echo D", DependsOn: []string{"B", "C"}},
 		},
 	}
 
@@ -150,10 +150,10 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"A": {Name: "A"},
-			"B": {Name: "B"},
-			"C": {Name: "C"},
-			"D": {Name: "D"},
+			"A": {Name: "A", Command: "echo A"},
+			"B": {Name: "B", Command: "echo B"},
+			"C": {Name: "C", Command: "echo C"},
+			"D": {Name: "D", Command: "echo D"},
 		},
 	}
 
@@ -183,8 +183,8 @@ func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"fail":    {Name: "fail"},
-			"succeed": {Name: "succeed"},
+			"fail":    {Name: "fail", Command: "echo fail"},
+			"succeed": {Name: "succeed", Command: "echo succeed"},
 		},
 	}
 
@@ -225,8 +225,8 @@ func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"fail": {Name: "fail"},
-			"slow": {Name: "slow"},
+			"fail": {Name: "fail", Command: "echo fail"},
+			"slow": {Name: "slow", Command: "echo slow"},
 		},
 	}
 
@@ -262,8 +262,8 @@ func TestRunWorkflowParallel_SkipsDependentsAfterFailedTask(t *testing.T) {
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"fail":    {Name: "fail"},
-			"blocked": {Name: "blocked", DependsOn: []string{"fail"}},
+			"fail":    {Name: "fail", Command: "echo fail"},
+			"blocked": {Name: "blocked", Command: "echo blocked", DependsOn: []string{"fail"}},
 		},
 	}
 
@@ -319,10 +319,10 @@ func TestRunWorkflowParallel_AllowsUnlockedParallelBranchBeforeFailure(t *testin
 
 	var wf *Workflow = &Workflow{
 		Tasks: map[string]*Task{
-			"prepare": {Name: "prepare"},
-			"ok":      {Name: "ok", DependsOn: []string{"prepare"}},
-			"fail":    {Name: "fail"},
-			"blocked": {Name: "blocked", DependsOn: []string{"fail"}},
+			"prepare": {Name: "prepare", Command: "echo prepare"},
+			"ok":      {Name: "ok", Command: "echo ok", DependsOn: []string{"prepare"}},
+			"fail":    {Name: "fail", Command: "echo fail"},
+			"blocked": {Name: "blocked", Command: "echo blocked", DependsOn: []string{"fail"}},
 		},
 	}
 
@@ -381,6 +381,31 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 	}
 	if !strings.Contains(output, "Stage 3: D") {
 		t.Fatalf("expected stage 3 output, got %q", output)
+	}
+}
+
+func TestRunWorkflowParallel_RejectsMissingCommandBeforeExecution(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		t.Fatalf("did not expect task %s to execute with invalid config", task.Name)
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"invalid": {Name: "invalid"},
+		},
+	}
+
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+
+	if !strings.Contains(err.Error(), "task invalid command is required") {
+		t.Fatalf("expected missing command validation error, got %v", err)
 	}
 }
 

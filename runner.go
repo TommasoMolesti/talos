@@ -113,7 +113,7 @@ func taskEnv(env map[string]string) []string {
 
 // RunWorkflowParallel executes the workflow with optional concurrency limits.
 func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
-	var err error = validateExecutionOrder(wf)
+	var err error = validateWorkflow(wf)
 	if err != nil {
 		return err
 	}

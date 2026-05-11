@@ -649,6 +649,50 @@ func TestValidateCLI_InvalidWorkflowReturnsFailure(t *testing.T) {
 	}
 }
 
+func TestValidateCLI_MissingTaskCommandReturnsFailure(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "missing-command.yaml")
+	var data string = "tasks:\n  build:\n    description: \"Compile the app\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "task build command is required") {
+		t.Fatalf("expected missing command validation error, got %q", output)
+	}
+	if !strings.Contains(output, workflowPath+":2:3") {
+		t.Fatalf("expected missing command error location, got %q", output)
+	}
+}
+
+func TestValidateCLI_EmptyWorkflowReturnsFailure(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "empty.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks: {}\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "workflow must define at least one task") {
+		t.Fatalf("expected empty workflow validation error, got %q", output)
+	}
+}
+
 func TestLoadWorkflow_ParsesTaskTimeout(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "timeout.yaml")

@@ -4,57 +4,19 @@ Talos is a small, local-first workflow runner for developers who want predictabl
 
 The roadmap is intentionally narrow. Talos should become easier to understand before a run, during a run, and after a failure. It should prove that a small Go CLI can have serious execution semantics, clear output, useful portability, and polished documentation without becoming a CI platform.
 
-## Release Plan
-
-Talos is currently at `v0.1.0`. Future work should be grouped into small, releasable versions instead of an open-ended feature list.
-
-Each `v0.x.0` release should have one main theme:
-
-- `v0.1.0`: current baseline.
-- `v0.2.0`: execution semantics.
-- `v0.3.0`: simple shell portability.
-- `v0.4.0`: run reporting.
-- `v0.5.0`: adoption polish.
-- `v1.0.0`: stable schema and project finish line.
-
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
-
-## Current Baseline: `v0.1.0`
-
-Talos already supports:
-
-- YAML workflow files.
-- Dependency validation.
-- Parallel task execution.
-- Dry-run execution plans.
-- Targeted runs with `--target`.
-- Per-task `cwd`, `env`, `retries`, and `timeout`.
-- Mermaid DAG visualization.
-- Release binaries for multiple platforms.
-
-The next work should make those foundations feel stable enough for real projects while keeping the product surface small.
-
-## Guiding Principles
-
-- Keep Talos local-first and dependency-light.
-- Prefer explicit workflow behavior over hidden magic.
-- Make failure states easy to understand.
-- Keep the default CLI output human-readable.
-- Add portability as a simple escape hatch, not a full platform abstraction.
-- Add automation features only when they fall naturally out of run reporting.
-- Say no to features that make Talos feel like a server, CI system, or orchestration platform.
 
 ## `v0.2.0`: Execution Semantics
 
 Goal: make task behavior explicit, predictable, and easy to reason about.
 
-Status: in progress.
+Status: released.
 
 Work in this release should stay PR-sized and easy to review.
 
 Planned work:
 
-- Improve validation and runtime error messages where behavior is currently unclear.
+- No remaining planned work.
 
 Done when:
 

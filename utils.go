@@ -299,6 +299,28 @@ func validationErrorAt(wf *Workflow, taskName string, depName string, format str
 	return fmt.Errorf("line %d, column %d: %w", location.Line, location.Column, err)
 }
 
+// validationErrorAtTaskField formats a validation error with a task field location.
+func validationErrorAtTaskField(wf *Workflow, taskName string, field string, format string, args ...interface{}) error {
+	var err error = fmt.Errorf(format, args...)
+	var location ConfigLocation
+	if wf != nil && wf.TaskLocations != nil {
+		var taskLocations TaskConfigLocations = wf.TaskLocations[taskName]
+		if taskLocations.Fields != nil {
+			location = taskLocations.Fields[field]
+		}
+		if location.Line == 0 {
+			location = taskLocations.Name
+		}
+	}
+	if location.Line == 0 {
+		return err
+	}
+	if wf != nil && wf.SourcePath != "" {
+		return fmt.Errorf("%s:%d:%d: %w", wf.SourcePath, location.Line, location.Column, err)
+	}
+	return fmt.Errorf("line %d, column %d: %w", location.Line, location.Column, err)
+}
+
 // validateExecutionOrder computes a valid execution order for all tasks in the workflow.
 //
 // It ensures that:
@@ -365,6 +387,19 @@ func validateExecutionOrder(wf *Workflow) error {
 
 // validateWorkflow performs config-only checks before execution.
 func validateWorkflow(wf *Workflow) error {
+	if wf == nil || len(wf.Tasks) == 0 {
+		return errors.New("workflow must define at least one task")
+	}
+
+	for name, task := range wf.Tasks {
+		if task == nil {
+			return validationErrorAt(wf, name, "", "task %s is empty", name)
+		}
+		if strings.TrimSpace(task.Command) == "" {
+			return validationErrorAtTaskField(wf, name, "command", "task %s command is required", name)
+		}
+	}
+
 	return validateExecutionOrder(wf)
 }
 
