@@ -48,14 +48,12 @@ The next work should make those foundations feel stable enough for real projects
 
 Goal: make task behavior explicit, predictable, and easy to reason about.
 
+Status: in progress.
+
 Work in this release should stay PR-sized and easy to review.
 
 Planned work:
 
-- Document exact behavior for successful, failed, canceled, retried, and timed-out tasks.
-- Document what happens to dependency branches when one task fails.
-- Add tests for mixed failure scenarios across parallel branches.
-- Add tests that lock in current fail-fast behavior.
 - Improve validation and runtime error messages where behavior is currently unclear.
 
 Done when:

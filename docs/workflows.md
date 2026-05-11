@@ -133,6 +133,22 @@ tasks:
 
 Timeout values are seconds.
 
+## Failure Semantics
+
+Talos uses fail-fast execution. When any task fails, times out, or is canceled, the workflow fails.
+
+During a failed run:
+
+- Tasks whose dependencies completed successfully may already be running.
+- Running tasks receive cancellation.
+- Talos stops scheduling new tasks after the first failure.
+- Tasks that never started are marked as skipped in the final summary.
+- Dependents of a failed, timed-out, canceled, or skipped task do not run.
+
+Retries are handled before a task is considered failed. For example, `retries: 2` allows one initial attempt and two retry attempts. If the final attempt fails, the workflow enters fail-fast cancellation.
+
+Timeouts stop the current task and fail the workflow immediately. Timed-out tasks are reported separately from ordinary command failures.
+
 ## Defaults
 
 Use `defaults` for values shared by most tasks.

@@ -242,6 +242,105 @@ func TestRunWorkflowParallel_CancelsRunningTasksOnFailure(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_SkipsDependentsAfterFailedTask(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	var mu sync.Mutex
+	var executed map[string]bool = make(map[string]bool)
+
+	runTask = func(_ context.Context, task *Task) error {
+		mu.Lock()
+		executed[task.Name] = true
+		mu.Unlock()
+
+		if task.Name == "fail" {
+			return errors.New("boom")
+		}
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"fail":    {Name: "fail"},
+			"blocked": {Name: "blocked", DependsOn: []string{"fail"}},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	restore()
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if executed["blocked"] {
+		t.Fatal("did not expect dependent task to run after dependency failure")
+	}
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "total=2 success=0 failed=1 timed_out=0 canceled=0 skipped=1") {
+		t.Fatalf("expected failed and skipped summary counts, got %q", output)
+	}
+	if !strings.Contains(output, "skipped: blocked") {
+		t.Fatalf("expected blocked task to be reported as skipped, got %q", output)
+	}
+}
+
+func TestRunWorkflowParallel_AllowsUnlockedParallelBranchBeforeFailure(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	var okDone chan struct{} = make(chan struct{})
+	var closeOnce sync.Once
+	var mu sync.Mutex
+	var executed map[string]bool = make(map[string]bool)
+
+	runTask = func(_ context.Context, task *Task) error {
+		mu.Lock()
+		executed[task.Name] = true
+		mu.Unlock()
+
+		switch task.Name {
+		case "ok":
+			closeOnce.Do(func() { close(okDone) })
+			return nil
+		case "fail":
+			<-okDone
+			return errors.New("boom")
+		default:
+			return nil
+		}
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"prepare": {Name: "prepare"},
+			"ok":      {Name: "ok", DependsOn: []string{"prepare"}},
+			"fail":    {Name: "fail"},
+			"blocked": {Name: "blocked", DependsOn: []string{"fail"}},
+		},
+	}
+
+	var err error = RunWorkflowParallel(wf, RunOptions{})
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if !executed["ok"] {
+		t.Fatal("expected already-unlocked parallel branch to run")
+	}
+	if executed["blocked"] {
+		t.Fatal("did not expect dependent of failed task to run")
+	}
+}
+
 func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
