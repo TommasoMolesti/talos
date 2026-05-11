@@ -1,10 +1,25 @@
 # Roadmap
 
-Talos is a local-first workflow runner for developers who want dependency-aware task execution without external infrastructure.
+Talos is a small, local-first workflow runner for developers who want predictable, dependency-aware task execution without external infrastructure.
 
-The roadmap is intentionally conservative. Talos should become more reliable, easier to adopt, and clearer under failure before it grows into heavier orchestration features.
+The roadmap is intentionally narrow. Talos should become easier to understand before a run, during a run, and after a failure. It should prove that a small Go CLI can have serious execution semantics, clear output, useful portability, and polished documentation without becoming a CI platform.
 
-## Current Focus
+## Release Plan
+
+Talos is currently at `v0.1.0`. Future work should be grouped into small, releasable versions instead of an open-ended feature list.
+
+Each `v0.x.0` release should have one main theme:
+
+- `v0.1.0`: current baseline.
+- `v0.2.0`: execution semantics.
+- `v0.3.0`: simple shell portability.
+- `v0.4.0`: run reporting.
+- `v0.5.0`: adoption polish.
+- `v1.0.0`: stable schema and project finish line.
+
+Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
+
+## Current Baseline: `v0.1.0`
 
 Talos already supports:
 
@@ -17,7 +32,7 @@ Talos already supports:
 - Mermaid DAG visualization.
 - Release binaries for multiple platforms.
 
-The next work should make those foundations feel stable enough for real projects.
+The next work should make those foundations feel stable enough for real projects while keeping the product surface small.
 
 ## Guiding Principles
 
@@ -25,39 +40,23 @@ The next work should make those foundations feel stable enough for real projects
 - Prefer explicit workflow behavior over hidden magic.
 - Make failure states easy to understand.
 - Keep the default CLI output human-readable.
-- Add automation features without making interactive usage noisy.
+- Add portability as a simple escape hatch, not a full platform abstraction.
+- Add automation features only when they fall naturally out of run reporting.
+- Say no to features that make Talos feel like a server, CI system, or orchestration platform.
 
-## Next Implementation Slices
-
-These are the best next PR-sized changes. Each one should be small enough to review on its own.
-
-| Priority | Change | Why It Matters |
-| --- | --- | --- |
-| 1 | Document failure semantics | Users should know exactly what happens when a task fails, times out, or is skipped. |
-| 2 | Add configurable shell support | Some workflows need `bash`, `zsh`, or platform-specific shell behavior. |
-| 3 | Add Mermaid file output | `talos visualize --output workflow.md` makes docs and pull requests easier. |
-| 4 | Add compact output mode | Long workflows need less noisy progress output. |
-| 5 | Add JSON summary output | Scripts and CI can consume results without parsing terminal text. |
-
-## Milestone 1: Execution Semantics
+## `v0.2.0`: Execution Semantics
 
 Goal: make task behavior explicit, predictable, and easy to reason about.
 
+Work in this release should stay PR-sized and easy to review.
+
 Planned work:
 
-- Add configurable shell support.
-- Add `continue_on_error` for non-blocking tasks.
-- Add CLI task skipping, such as skipping known slow or optional tasks.
-- Document exact behavior for failed, skipped, canceled, and timed-out tasks.
+- Document exact behavior for successful, failed, canceled, retried, and timed-out tasks.
+- Document what happens to dependency branches when one task fails.
 - Add tests for mixed failure scenarios across parallel branches.
-
-Suggested implementation order:
-
-1. Write failure behavior docs for the current implementation.
-2. Add tests that lock in current fail-fast behavior.
-3. Add workflow-level and task-level shell configuration.
-4. Add `continue_on_error` only after failure semantics are documented.
-5. Add skip behavior after the scheduler rules are stable.
+- Add tests that lock in current fail-fast behavior.
+- Improve validation and runtime error messages where behavior is currently unclear.
 
 Done when:
 
@@ -65,58 +64,68 @@ Done when:
 - Failure behavior is covered by docs and tests.
 - Existing workflows continue to run without changes.
 
-## Milestone 2: Output And Automation
+## `v0.3.0`: Simple Portability
 
-Goal: make Talos easier to use in long-running local workflows and scripts.
+Goal: let workflows choose a shell without turning Talos into a cross-platform command abstraction layer.
+
+Work in this release should stay PR-sized and easy to review.
 
 Planned work:
 
-- Add compact and verbose output modes.
-- Improve task timing and summary details.
-- Add machine-readable output, likely JSON, for automation and CI.
-- Add optional Mermaid output to a file.
-- Keep human output clean by default.
-
-Suggested implementation order:
-
-1. Add `talos visualize --output <path>`.
-2. Define a stable JSON schema for run summaries.
-3. Add `talos run --output json`.
-4. Add compact and verbose human output modes.
-5. Update examples and command docs.
+- Add workflow-level shell configuration.
+- Optionally allow task-level shell overrides if the implementation stays small.
+- Keep the default behavior unchanged.
+- Document shell behavior, including platform expectations and quoting limitations.
+- Add tests for configured shells and default fallback behavior.
 
 Done when:
 
-- Developers can quickly scan an interactive run.
-- Scripts can consume Talos output without parsing human text.
-- Documentation shows both human and machine-readable usage.
+- A workflow can opt into `bash`, `zsh`, or another shell explicitly.
+- Existing workflows keep the same behavior.
+- The docs are honest about what Talos does and does not abstract.
 
-## Milestone 3: Distribution And Adoption
+## `v0.4.0`: Run Reporting
+
+Goal: make Talos easy to read while tasks run in parallel and easy to understand after a run finishes.
+
+Work in this release should stay PR-sized and easy to review.
+
+Planned work:
+
+- Introduce a small internal output layer for task lifecycle events.
+- Keep parallel task logs readable with stable task prefixes.
+- Add clear final summaries with task status and duration.
+- Add simple `--quiet` and `--verbose` modes only if they have clear behavior.
+- Consider JSON summary output after the human summary model is stable.
+- Keep human output clean by default.
+
+Done when:
+
+- Developers can quickly scan an interactive run without losing track of parallel tasks.
+- Failures are easy to find in the output.
+- The final summary explains what ran, what failed, what was canceled, and how long tasks took.
+
+## `v0.5.0`: Adoption Polish
 
 Goal: make the project easy to install, evaluate, and contribute to.
 
+Work in this release should stay PR-sized and easy to review.
+
 Planned work:
 
-- Add Homebrew installation support.
 - Add contribution guidelines.
 - Add issue templates for bugs and feature requests.
-- Add a small demo project that uses Talos in a realistic workflow.
+- Improve one existing example so it feels realistic without becoming a demo app.
 - Add a short comparison section explaining when to use Talos instead of `make`, npm scripts, or CI-only pipelines.
-
-Suggested implementation order:
-
-1. Add `CONTRIBUTING.md`.
-2. Add issue templates.
-3. Add a demo project under `examples/demo`.
-4. Add comparison documentation.
-5. Add Homebrew distribution once release behavior feels stable.
+- Keep install options focused on release binaries, the install script, and `go install`.
 
 Done when:
 
-- A new user can install Talos, run a demo, and understand the project in under 10 minutes.
+- A new user can install Talos, run a realistic example, and understand the project in under 10 minutes.
 - A contributor can find the test command, coding expectations, and release process without reading source code.
+- The project looks finished without depending on package-manager sprawl.
 
-## Milestone 4: `v1.0.0`
+## `v1.0.0`: Stable Release
 
 Goal: stabilize the workflow schema and CLI behavior.
 
@@ -134,16 +143,17 @@ Done when:
 - The README, docs, examples, and CLI help all describe the same behavior.
 - Release artifacts and checksums are verified from a clean tag.
 
-## Later Ideas
+## Project Finish Line
 
-These ideas are useful, but they should wait until the core runner is stable:
+Talos should reach a clear `v1.0.0` and then enter maintenance mode. The project is not meant to grow for years through unrelated feature areas.
 
-- File watching.
-- Task caching.
-- Conditional task execution.
-- Plugin support.
-- Web UI.
-- CI integrations.
-- Remote execution.
+The project is considered complete when:
 
-Talos should remain small, understandable, and local-first. Features that require servers, databases, or distributed infrastructure should be added only if they preserve that core idea.
+- The workflow schema is stable and documented.
+- Execution semantics are documented and covered by tests.
+- Shell configuration is simple and predictable.
+- Run reporting makes parallel execution easy to follow.
+- README, examples, command docs, and internals docs agree with the implementation.
+- Release artifacts can be built and verified from a clean tag.
+
+After `v1.0.0`, Talos should prefer bug fixes, documentation improvements, compatibility updates, and small refinements over new feature areas.
