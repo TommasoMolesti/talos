@@ -6,6 +6,10 @@ Use it when a project needs repeatable commands such as setup, lint, test, build
 
 ## Why Talos
 
+In Greek mythology, **Talos** was a giant bronze automaton—the first "robot"—created to protect the island of Crete. Like its namesake, this tool is a self-operating, local-first engine. It doesn't rely on external clouds or complex clusters; it is an autonomous guardian of your workflows, running entirely on your machine to execute tasks with mechanical precision and speed.
+
+## Features
+
 - **Local-first:** runs as a single CLI binary.
 - **Dependency-aware:** tasks run only after their dependencies finish.
 - **Parallel by default:** independent tasks run concurrently.
