@@ -863,6 +863,33 @@ func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_ParsesShellExample(t *testing.T) {
+	var workflowPath string = filepath.Join("examples", "shell.yaml")
+
+	var wf *Workflow
+	var err error
+	wf, err = loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var defaultShell *Task = wf.Tasks["default-shell"]
+	if defaultShell == nil {
+		t.Fatal("expected default-shell task")
+	}
+	if defaultShell.Shell != "bash" {
+		t.Fatalf("expected default-shell to inherit bash, got %q", defaultShell.Shell)
+	}
+
+	var taskShell *Task = wf.Tasks["task-shell"]
+	if taskShell == nil {
+		t.Fatal("expected task-shell task")
+	}
+	if taskShell.Shell != "zsh" {
+		t.Fatalf("expected task-shell to override zsh, got %q", taskShell.Shell)
+	}
+}
+
 func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "invalid-timeout.yaml")
