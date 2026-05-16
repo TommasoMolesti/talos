@@ -73,6 +73,12 @@ Print task execution context before each task runs:
 talos run --verbose
 ```
 
+Print only the final summary as JSON:
+
+```bash
+talos run --summary json
+```
+
 Shell selection is configured in the workflow file with `defaults.shell` or task-level `shell`, not with a run flag. See [Workflow Configuration](workflows.md#shell).
 
 ## `talos validate`

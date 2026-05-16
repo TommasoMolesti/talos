@@ -1,13 +1,32 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
 )
+
+type jsonRunSummary struct {
+	Success         bool               `json:"success"`
+	DurationSeconds float64            `json:"duration_seconds"`
+	Counts          map[taskStatus]int `json:"counts"`
+	Tasks           []jsonTaskSummary  `json:"tasks"`
+}
+
+type jsonTaskSummary struct {
+	Name            string     `json:"name"`
+	Description     string     `json:"description,omitempty"`
+	Status          taskStatus `json:"status"`
+	Attempts        int        `json:"attempts"`
+	DurationSeconds float64    `json:"duration_seconds"`
+	TimeoutSeconds  float64    `json:"timeout_seconds,omitempty"`
+	Error           string     `json:"error,omitempty"`
+}
 
 var (
 	info func(a ...interface{}) string = color.New(color.FgCyan).SprintFunc()
@@ -152,6 +171,16 @@ func PrintEnd(total float64, success bool) {
 	fmt.Printf("%s Failed in %.2fs\n", fail("[talos]"), total)
 }
 
+// PrintRunSummary prints the final run summary in the requested format.
+func PrintRunSummary(summary *executionSummary, totalDuration time.Duration, success bool, format string) {
+	if format == "json" {
+		PrintJSONSummary(summary, totalDuration, success)
+		return
+	}
+	PrintSummary(summary)
+	PrintEnd(totalDuration.Seconds(), success)
+}
+
 // PrintSummary prints a final summary of task outcomes for the workflow run.
 func PrintSummary(summary *executionSummary) {
 	var counts map[taskStatus]int = make(map[taskStatus]int)
@@ -221,6 +250,42 @@ func PrintSummary(summary *executionSummary) {
 		for _, line := range taskLines {
 			fmt.Println(line)
 		}
+	}
+}
+
+// PrintJSONSummary prints a machine-readable final summary.
+func PrintJSONSummary(summary *executionSummary, totalDuration time.Duration, success bool) {
+	var report jsonRunSummary = jsonRunSummary{
+		Success:         success,
+		DurationSeconds: totalDuration.Seconds(),
+		Counts:          make(map[taskStatus]int),
+	}
+
+	var names []string = make([]string, 0, len(summary.Tasks))
+	for name := range summary.Tasks {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		var task *taskSummary = summary.Tasks[name]
+		report.Counts[task.Status]++
+		report.Tasks = append(report.Tasks, jsonTaskSummary{
+			Name:            name,
+			Description:     task.Description,
+			Status:          task.Status,
+			Attempts:        task.Attempts,
+			DurationSeconds: task.Duration.Seconds(),
+			TimeoutSeconds:  task.Timeout.Seconds(),
+			Error:           task.Error,
+		})
+	}
+
+	var encoder *json.Encoder = json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	var err error = encoder.Encode(report)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[talos] failed to write JSON summary: %v\n", err)
 	}
 }
 

@@ -186,6 +186,7 @@ func runCmd(args []string) error {
 	var dryRun *bool = fs.Bool("dry-run", false, "print the execution plan without running commands")
 	var maxConcurrency *int = fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
 	var quiet *bool = fs.Bool("quiet", false, "suppress live task output and print only the final summary")
+	var summaryFormat *string = fs.String("summary", "human", "summary output format: human or json")
 	var verbose *bool = fs.Bool("verbose", false, "print task execution context before each task runs")
 	var targetTask *string = fs.String("target", "", "run only the specified task and its dependencies")
 
@@ -199,6 +200,12 @@ func runCmd(args []string) error {
 	}
 	if *quiet && *verbose {
 		return fmt.Errorf("--quiet and --verbose cannot be used together")
+	}
+	if *summaryFormat != "human" && *summaryFormat != "json" {
+		return fmt.Errorf("--summary must be human or json")
+	}
+	if *summaryFormat == "json" && *verbose {
+		return fmt.Errorf("--summary json and --verbose cannot be used together")
 	}
 
 	// Load workflow
@@ -220,6 +227,7 @@ func runCmd(args []string) error {
 		MaxConcurrency: *maxConcurrency,
 		DryRun:         *dryRun,
 		Quiet:          *quiet,
+		SummaryFormat:  *summaryFormat,
 		Verbose:        *verbose,
 	}
 

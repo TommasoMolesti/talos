@@ -23,6 +23,8 @@ type RunOptions struct {
 	Quiet bool
 	// Verbose prints task execution context before each task runs.
 	Verbose bool
+	// SummaryFormat controls final summary rendering. Empty means "human".
+	SummaryFormat string
 }
 
 type taskResult struct {
@@ -141,7 +143,8 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		return nil
 	}
 
-	restoreOutput := SetOutputMode(opts.Quiet, opts.Verbose)
+	var jsonSummary bool = opts.SummaryFormat == "json"
+	restoreOutput := SetOutputMode(opts.Quiet || jsonSummary, opts.Verbose)
 	defer restoreOutput()
 
 	PrintStart()
@@ -307,12 +310,11 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	wg.Wait()
 	summary.markPendingAsSkipped()
 	var totalDuration time.Duration = time.Since(startTotal)
-	PrintSummary(summary)
 	if firstErr != nil {
-		PrintEnd(totalDuration.Seconds(), false)
+		PrintRunSummary(summary, totalDuration, false, opts.SummaryFormat)
 		return firstErr
 	}
-	PrintEnd(totalDuration.Seconds(), true)
+	PrintRunSummary(summary, totalDuration, true, opts.SummaryFormat)
 
 	return nil
 }

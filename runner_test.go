@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -655,6 +656,58 @@ func TestRunWorkflowParallel_VerbosePrintsTaskContext(t *testing.T) {
 	}
 	if !strings.Contains(output, "[demo] live output") {
 		t.Fatalf("expected regular live output to remain visible, got %q", output)
+	}
+}
+
+func TestRunWorkflowParallel_PrintsJSONSummary(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		PrintTaskOutputLine(task.Name, "live output")
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"demo": {Name: "demo", Description: "Demo task", Command: "echo demo"},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{SummaryFormat: "json"})
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var output string = stdout.String()
+	if strings.Contains(output, "Starting workflow") || strings.Contains(output, "live output") || strings.Contains(output, "[talos] Done") {
+		t.Fatalf("expected JSON summary to suppress human live output, got %q", output)
+	}
+
+	var summary struct {
+		Success bool `json:"success"`
+		Counts  map[string]int
+		Tasks   []struct {
+			Name            string  `json:"name"`
+			Description     string  `json:"description"`
+			Status          string  `json:"status"`
+			Attempts        int     `json:"attempts"`
+			DurationSeconds float64 `json:"duration_seconds"`
+		} `json:"tasks"`
+	}
+	err = json.Unmarshal(stdout.Bytes(), &summary)
+	if err != nil {
+		t.Fatalf("parse JSON summary: %v; output=%q", err, output)
+	}
+	if !summary.Success || summary.Counts["success"] != 1 {
+		t.Fatalf("expected successful JSON summary, got %#v", summary)
+	}
+	if len(summary.Tasks) != 1 || summary.Tasks[0].Name != "demo" || summary.Tasks[0].Description != "Demo task" || summary.Tasks[0].Status != "success" || summary.Tasks[0].Attempts != 1 {
+		t.Fatalf("expected demo task JSON summary, got %#v", summary.Tasks)
 	}
 }
 

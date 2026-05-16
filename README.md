@@ -90,6 +90,7 @@ talos run --target test            # run one task and its dependencies
 talos run --max-concurrency 2      # limit parallel tasks
 talos run --quiet                  # suppress live task output
 talos run --verbose                # print task execution context
+talos run --summary json           # print a JSON run summary
 talos validate                     # check workflow syntax and dependencies
 talos visualize                    # print the DAG as Mermaid
 talos version                      # print version metadata

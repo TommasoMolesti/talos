@@ -228,6 +228,8 @@ Use `talos run --quiet` to suppress live task output while keeping the final sum
 
 Use `talos run --verbose` to print each task's shell, working directory, retry count, timeout, and command before it runs. Verbose output does not print environment variable values.
 
+Use `talos run --summary json` when scripts need a machine-readable final summary. JSON summary mode suppresses live task output and prints only the summary JSON to stdout.
+
 ## Defaults
 
 Use `defaults` for values shared by most tasks.
