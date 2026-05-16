@@ -88,6 +88,8 @@ talos run                          # run talos.yaml
 talos run --dry-run                # print the execution plan
 talos run --target test            # run one task and its dependencies
 talos run --max-concurrency 2      # limit parallel tasks
+talos run --quiet                  # suppress live task output
+talos run --verbose                # print task execution context
 talos validate                     # check workflow syntax and dependencies
 talos visualize                    # print the DAG as Mermaid
 talos version                      # print version metadata
@@ -124,7 +126,7 @@ Talos is intentionally small, but it demonstrates production-oriented engineerin
 
 - DAG validation before execution, including missing dependencies and cycles.
 - Deterministic execution plans for predictable dry runs and tests.
-- Concurrent scheduling with cancellation on failure.
+- Concurrent scheduling with cancellation on failure and readable run summaries.
 - Per-task shell, retries, timeouts, environment overrides, and working directories.
 - User-facing CLI behavior covered by tests.
 - Automated release builds for Linux, macOS, and Windows.
