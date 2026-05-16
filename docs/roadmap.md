@@ -6,29 +6,6 @@ The roadmap is intentionally narrow. Talos should become easier to understand be
 
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
 
-## `v0.4.0`: Run Reporting
-
-Goal: make Talos easy to read while tasks run in parallel and easy to understand after a run finishes.
-
-Status: in progress. The current development branch includes stable task output prefixes, per-task summary rows with status and duration, failed-task error details in the final summary, `--quiet` mode, `--verbose` mode, and JSON summary output.
-
-Work in this release should stay PR-sized and easy to review.
-
-Planned work:
-
-- Introduce a small internal output layer for task lifecycle events.
-- Keep parallel task logs readable with stable task prefixes.
-- Add clear final summaries with task status and duration.
-- Add simple `--quiet` and `--verbose` modes only if they have clear behavior.
-- Consider JSON summary output after the human summary model is stable.
-- Keep human output clean by default.
-
-Done when:
-
-- Developers can quickly scan an interactive run without losing track of parallel tasks.
-- Failures are easy to find in the output.
-- The final summary explains what ran, what failed, what was canceled, and how long tasks took.
-
 ## `v0.5.0`: Adoption Polish
 
 Goal: make the project easy to install, evaluate, and contribute to.

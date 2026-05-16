@@ -1,6 +1,6 @@
 # Release Process
 
-Talos publishes repeatable GitHub releases from version tags. A tag like `v0.3.0` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release.
+Talos publishes repeatable GitHub releases from version tags. A tag like `v0.4.0` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release.
 
 ## Before Tagging
 
@@ -15,7 +15,7 @@ go test ./...
 Confirm the version output works with release metadata:
 
 ```bash
-go build -ldflags "-X main.version=0.3.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
+go build -ldflags "-X main.version=0.4.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
 ./talos version
 ```
 
@@ -24,8 +24,8 @@ go build -ldflags "-X main.version=0.3.0 -X main.commit=$(git rev-parse --short 
 Create and push a version tag:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
 The release workflow publishes:
