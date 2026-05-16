@@ -105,6 +105,7 @@ The [examples](examples) directory includes starter workflows for:
 - [Python](examples/python.yaml)
 - [Docker](examples/docker.yaml)
 - [Monorepo](examples/monorepo.yaml)
+- [Shell configuration](examples/shell.yaml)
 
 Preview any example:
 

@@ -128,6 +128,8 @@ Task-level `shell` values override the workflow default. Talos passes the comman
 
 Use a shell name that exists on the machines where the workflow will run, such as `bash`, `zsh`, or an absolute path to a shell executable.
 
+See [the shell example](../examples/shell.yaml) for workflow-level shell configuration and a task-level override.
+
 ## Environment Variables
 
 Use `env` for task-specific environment variables.

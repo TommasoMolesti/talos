@@ -1,0 +1,13 @@
+defaults:
+  shell: "bash"
+
+tasks:
+  default-shell:
+    description: "Run with the workflow shell"
+    command: 'printf "workflow shell: %s\n" "$BASH_VERSION"'
+
+  task-shell:
+    description: "Run with a task-specific shell"
+    command: 'printf "task shell: %s\n" "$ZSH_VERSION"'
+    shell: "zsh"
+    depends_on: ["default-shell"]

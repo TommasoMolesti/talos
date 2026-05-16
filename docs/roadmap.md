@@ -10,7 +10,7 @@ Patch releases should be reserved for bug fixes, documentation corrections, and 
 
 Goal: let workflows choose a shell without turning Talos into a cross-platform command abstraction layer.
 
-Status: implemented in the current development branch.
+Status: complete in the current development branch.
 
 Work in this release should stay PR-sized and easy to review.
 
