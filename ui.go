@@ -258,7 +258,7 @@ func PrintJSONSummary(summary *executionSummary, totalDuration time.Duration, su
 	var report jsonRunSummary = jsonRunSummary{
 		Success:         success,
 		DurationSeconds: totalDuration.Seconds(),
-		Counts:          make(map[taskStatus]int),
+		Counts:          newTaskStatusCounts(),
 	}
 
 	var names []string = make([]string, 0, len(summary.Tasks))
@@ -287,6 +287,21 @@ func PrintJSONSummary(summary *executionSummary, totalDuration time.Duration, su
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[talos] failed to write JSON summary: %v\n", err)
 	}
+}
+
+// newTaskStatusCounts initializes all known statuses for stable summary output.
+func newTaskStatusCounts() map[taskStatus]int {
+	var counts map[taskStatus]int = make(map[taskStatus]int)
+	for _, status := range []taskStatus{
+		taskStatusSuccess,
+		taskStatusFailed,
+		taskStatusTimedOut,
+		taskStatusCanceled,
+		taskStatusSkipped,
+	} {
+		counts[status] = 0
+	}
+	return counts
 }
 
 // formatTaskLabel combines a task name with its optional description.

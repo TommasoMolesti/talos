@@ -703,7 +703,7 @@ func TestRunWorkflowParallel_PrintsJSONSummary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse JSON summary: %v; output=%q", err, output)
 	}
-	if !summary.Success || summary.Counts["success"] != 1 {
+	if !summary.Success || summary.Counts["success"] != 1 || summary.Counts["failed"] != 0 || summary.Counts["timed_out"] != 0 || summary.Counts["canceled"] != 0 || summary.Counts["skipped"] != 0 {
 		t.Fatalf("expected successful JSON summary, got %#v", summary)
 	}
 	if len(summary.Tasks) != 1 || summary.Tasks[0].Name != "demo" || summary.Tasks[0].Description != "Demo task" || summary.Tasks[0].Status != "success" || summary.Tasks[0].Attempts != 1 {
