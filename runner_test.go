@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -511,6 +512,9 @@ func TestRunWorkflowParallel_PrintsSummaryWithRetries(t *testing.T) {
 	if !strings.Contains(output, "retries: flaky - Retry transient command (2 retries)") {
 		t.Fatalf("expected retry details, got %q", output)
 	}
+	if !strings.Contains(output, "tasks:") || !strings.Contains(output, "success: flaky - Retry transient command") {
+		t.Fatalf("expected task status details, got %q", output)
+	}
 }
 
 func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
@@ -589,6 +593,9 @@ func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testi
 	if !strings.Contains(output, "skipped: blocked - Runs after slow") {
 		t.Fatalf("expected skipped task details, got %q", output)
 	}
+	if !strings.Contains(output, "timed_out: slow - Wait too long") || !strings.Contains(output, "skipped: blocked - Runs after slow (0.00s)") {
+		t.Fatalf("expected task status and duration details, got %q", output)
+	}
 	if !strings.Contains(output, "[talos] Failed in") {
 		t.Fatalf("expected failed final line, got %q", output)
 	}
@@ -615,10 +622,15 @@ func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
 	}
 
 	var output string = stdout.String()
-	if !strings.Contains(output, tempDir) {
-		t.Fatalf("expected task output to include working dir %q, got %q", tempDir, output)
+	var expectedDir string
+	expectedDir, err = filepath.EvalSymlinks(tempDir)
+	if err != nil {
+		t.Fatalf("resolve temp dir: %v", err)
 	}
-	if !strings.Contains(output, "enabled") {
+	if !strings.Contains(output, "[demo] "+expectedDir) {
+		t.Fatalf("expected task output to include working dir %q, got %q", expectedDir, output)
+	}
+	if !strings.Contains(output, "[demo] enabled") {
 		t.Fatalf("expected task output to include env var, got %q", output)
 	}
 }
@@ -648,10 +660,10 @@ func TestRunTask_UsesConfiguredShell(t *testing.T) {
 	}
 
 	var output string = stdout.String()
-	if !strings.Contains(output, "shell:"+shellPath) {
+	if !strings.Contains(output, "[demo] shell:"+shellPath) {
 		t.Fatalf("expected configured shell to run, got %q", output)
 	}
-	if !strings.Contains(output, "arg:-c") || !strings.Contains(output, "cmd:echo configured") {
+	if !strings.Contains(output, "[demo] arg:-c") || !strings.Contains(output, "[demo] cmd:echo configured") {
 		t.Fatalf("expected command to be passed with -c, got %q", output)
 	}
 }

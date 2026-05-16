@@ -76,7 +76,7 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 	var lines []string = strings.Split(string(output), "\n")
 	for _, line := range lines {
 		if line != "" {
-			PrintTaskOutputLine(line)
+			PrintTaskOutputLine(task.Name, line)
 		}
 	}
 

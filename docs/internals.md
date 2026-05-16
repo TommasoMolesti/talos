@@ -39,7 +39,8 @@ Talos uses fail-fast execution:
 - If a task fails, times out, or is canceled, Talos records the first non-cancellation error and cancels the workflow context.
 - Running commands receive cancellation through that context.
 - Tasks that were ready but not yet running, or tasks blocked behind failed dependencies, are marked as skipped.
-- The final summary shows success, failure, timeout, cancellation, retries, and skipped tasks.
+- Task output lines are prefixed with the task name so parallel logs stay attributable.
+- The final summary shows success, failure, timeout, cancellation, retries, skipped tasks, and per-task durations.
 
 Retries happen inside a task attempt loop before the scheduler sees the final result. A task with `retries: 2` can run up to three times. Only the final result is used to decide whether dependents can run.
 
@@ -59,7 +60,11 @@ Workflow defaults and task-level configuration can set a different shell executa
 <shell> -c "<task command>"
 ```
 
-Talos applies task-specific working directories and environment variables before starting the command.
+Talos applies task-specific working directories and environment variables before starting the command. Output emitted by the command is printed with a stable task prefix:
+
+```text
+[test] ok ./...
+```
 
 ## Why This Design
 

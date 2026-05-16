@@ -51,10 +51,9 @@ func PrintTaskRetry(name string, attempt int, maxAttempts int, err error) {
 	fmt.Printf("%s %s retry %d/%d after error: %v\n", run("↻"), name, attempt, maxAttempts, err)
 }
 
-// PrintTaskOutputLine prints a single line of task output,
-// formatted with indentation to distinguish it from system logs.
-func PrintTaskOutputLine(line string) {
-	fmt.Println("  " + line)
+// PrintTaskOutputLine prints a single line of task output with a stable task prefix.
+func PrintTaskOutputLine(name string, line string) {
+	fmt.Printf("  [%s] %s\n", name, line)
 }
 
 // PrintTaskSuccess prints a success message for a completed task,
@@ -98,10 +97,12 @@ func PrintSummary(summary *executionSummary) {
 	var timedOut []string
 	var canceled []string
 	var skippedTasks []string
+	var taskLines []string
 
 	for name, task := range summary.Tasks {
 		counts[task.Status]++
 		var label string = formatTaskLabel(name, task.Description)
+		taskLines = append(taskLines, formatSummaryTaskLine(label, task))
 		if task.Attempts > 1 {
 			retried = append(retried, fmt.Sprintf("%s (%d retries)", label, task.Attempts-1))
 		}
@@ -120,6 +121,7 @@ func PrintSummary(summary *executionSummary) {
 	sort.Strings(timedOut)
 	sort.Strings(canceled)
 	sort.Strings(skippedTasks)
+	sort.Strings(taskLines)
 
 	fmt.Println()
 	fmt.Println(info("[talos] Summary"))
@@ -144,6 +146,12 @@ func PrintSummary(summary *executionSummary) {
 	if len(skippedTasks) > 0 {
 		fmt.Printf("  skipped: %s\n", strings.Join(skippedTasks, ", "))
 	}
+	if len(taskLines) > 0 {
+		fmt.Println("  tasks:")
+		for _, line := range taskLines {
+			fmt.Println(line)
+		}
+	}
 }
 
 // formatTaskLabel combines a task name with its optional description.
@@ -152,4 +160,17 @@ func formatTaskLabel(name string, description string) string {
 		return name
 	}
 	return fmt.Sprintf("%s - %s", name, description)
+}
+
+// formatSummaryTaskLine renders one deterministic task result row.
+func formatSummaryTaskLine(label string, task *taskSummary) string {
+	return fmt.Sprintf("    %s: %s (%s)", task.Status, label, formatDuration(task.Duration))
+}
+
+// formatDuration renders durations compactly for human summary output.
+func formatDuration(duration time.Duration) string {
+	if duration == 0 {
+		return "0.00s"
+	}
+	return fmt.Sprintf("%.2fs", duration.Seconds())
 }

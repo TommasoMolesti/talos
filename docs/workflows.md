@@ -84,6 +84,12 @@ tasks:
 
 Descriptions appear in dry-run and summary output.
 
+During execution, command output is prefixed with the task name so concurrent runs stay readable:
+
+```text
+[migrate] applied 3 migrations
+```
+
 ## Working Directory
 
 Use `cwd` when a command must run from a specific directory.
