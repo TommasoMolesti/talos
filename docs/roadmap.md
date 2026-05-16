@@ -10,7 +10,7 @@ Patch releases should be reserved for bug fixes, documentation corrections, and 
 
 Goal: make Talos easy to read while tasks run in parallel and easy to understand after a run finishes.
 
-Status: in progress. The current development branch includes stable task output prefixes, per-task summary rows with status and duration, and failed-task error details in the final summary.
+Status: in progress. The current development branch includes stable task output prefixes, per-task summary rows with status and duration, failed-task error details in the final summary, and `--quiet` mode.
 
 Work in this release should stay PR-sized and easy to review.
 

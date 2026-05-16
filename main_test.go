@@ -86,7 +86,7 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 		t.Fatalf("expected usage examples, got %q", output)
 	}
 
-	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-target") {
+	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-quiet") || !strings.Contains(output, "-target") {
 		t.Fatalf("expected help output, got %q", output)
 	}
 }
@@ -390,6 +390,41 @@ func TestRunCmd_PassesDryRunOption(t *testing.T) {
 
 	if !gotOptions.DryRun {
 		t.Fatal("expected dry run to be true")
+	}
+}
+
+func TestRunCmd_PassesQuietOption(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origRun func(*Workflow, RunOptions) error = runWorkflowFunc
+	defer func() {
+		loadWorkflowFunc = origLoad
+		runWorkflowFunc = origRun
+	}()
+
+	loadWorkflowFunc = func(path string) (*Workflow, error) {
+		return origLoad(path)
+	}
+
+	var gotOptions RunOptions
+	runWorkflowFunc = func(wf *Workflow, opts RunOptions) error {
+		gotOptions = opts
+		return nil
+	}
+
+	err = runCmd([]string{"--file", workflowPath, "--quiet"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !gotOptions.Quiet {
+		t.Fatal("expected quiet to be true")
 	}
 }
 

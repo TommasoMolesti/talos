@@ -61,6 +61,12 @@ Limit the number of tasks running at the same time:
 talos run --max-concurrency 2
 ```
 
+Suppress live task output while keeping the final summary:
+
+```bash
+talos run --quiet
+```
+
 Shell selection is configured in the workflow file with `defaults.shell` or task-level `shell`, not with a run flag. See [Workflow Configuration](workflows.md#shell).
 
 ## `talos validate`

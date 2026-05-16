@@ -19,6 +19,8 @@ type RunOptions struct {
 	MaxConcurrency int
 	// DryRun prints the execution plan without running commands.
 	DryRun bool
+	// Quiet suppresses live task output while keeping the final summary.
+	Quiet bool
 }
 
 type taskResult struct {
@@ -136,6 +138,9 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		PrintDryRun(plan, wf)
 		return nil
 	}
+
+	restoreOutput := SetQuietOutput(opts.Quiet)
+	defer restoreOutput()
 
 	PrintStart()
 	var startTotal time.Time = time.Now()

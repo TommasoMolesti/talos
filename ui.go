@@ -17,8 +17,22 @@ var (
 	fail func(a ...interface{}) string = color.New(color.FgRed).SprintFunc()
 )
 
+var quietOutput bool
+
+// SetQuietOutput updates live output suppression and returns a restore function.
+func SetQuietOutput(quiet bool) func() {
+	var previous bool = quietOutput
+	quietOutput = quiet
+	return func() {
+		quietOutput = previous
+	}
+}
+
 // PrintStart prints the initial message indicating that workflow execution has started.
 func PrintStart() {
+	if quietOutput {
+		return
+	}
 	fmt.Println(info("[talos] Starting workflow...\n"))
 }
 
@@ -39,6 +53,9 @@ func PrintDryRun(plan [][]string, wf *Workflow) {
 //
 // It includes the task name and optionally its dependencies.
 func PrintTaskStart(name string, deps []string) {
+	if quietOutput {
+		return
+	}
 	if len(deps) > 0 {
 		fmt.Printf("%s %s (depends on: %v)\n", run("▶"), name, deps)
 	} else {
@@ -48,35 +65,53 @@ func PrintTaskStart(name string, deps []string) {
 
 // PrintTaskRetry prints a retry message before a new attempt begins.
 func PrintTaskRetry(name string, attempt int, maxAttempts int, err error) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("%s %s retry %d/%d after error: %v\n", run("↻"), name, attempt, maxAttempts, err)
 }
 
 // PrintTaskOutputLine prints a single line of task output with a stable task prefix.
 func PrintTaskOutputLine(name string, line string) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("  [%s] %s\n", name, line)
 }
 
 // PrintTaskSuccess prints a success message for a completed task,
 // including its execution duration in seconds.
 func PrintTaskSuccess(name string, duration float64) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("%s %s (%.2fs)\n\n", ok("✔"), name, duration)
 }
 
 // PrintTaskFailure prints a failure message for a task,
 // including its execution duration in seconds.
 func PrintTaskFailure(name string, duration float64) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("%s %s (%.2fs)\n\n", fail("✖"), name, duration)
 }
 
 // PrintTaskCanceled prints a cancellation message for a task,
 // including its execution duration in seconds.
 func PrintTaskCanceled(name string, duration float64) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("%s %s (%.2fs)\n\n", skip("◌"), name, duration)
 }
 
 // PrintTaskTimeout prints a timeout message for a task,
 // including its execution duration and timeout limit.
 func PrintTaskTimeout(name string, duration float64, timeout time.Duration) {
+	if quietOutput {
+		return
+	}
 	fmt.Printf("%s %s (%.2fs, timeout %s)\n\n", fail("⌛"), name, duration, timeout)
 }
 

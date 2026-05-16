@@ -224,6 +224,8 @@ Timeouts stop the current task and fail the workflow immediately. Timed-out task
 
 When a task fails, the final summary includes the failed task name and the command error returned by the shell or process.
 
+Use `talos run --quiet` to suppress live task output while keeping the final summary.
+
 ## Defaults
 
 Use `defaults` for values shared by most tasks.

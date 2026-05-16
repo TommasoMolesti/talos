@@ -582,6 +582,39 @@ func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_QuietSuppressesLiveOutput(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		PrintTaskOutputLine(task.Name, "live output")
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"demo": {Name: "demo", Command: "echo demo"},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{Quiet: true})
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var output string = stdout.String()
+	if strings.Contains(output, "Starting workflow") || strings.Contains(output, "▶ demo") || strings.Contains(output, "live output") || strings.Contains(output, "✔ demo") {
+		t.Fatalf("expected quiet output to suppress live task output, got %q", output)
+	}
+	if !strings.Contains(output, "[talos] Summary") || !strings.Contains(output, "success: demo") || !strings.Contains(output, "[talos] Done in") {
+		t.Fatalf("expected quiet output to keep final summary, got %q", output)
+	}
+}
+
 func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testing.T) {
 	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()

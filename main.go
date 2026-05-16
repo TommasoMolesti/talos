@@ -185,6 +185,7 @@ func runCmd(args []string) error {
 	var workflowFile *string = fs.String("file", "talos.yaml", "path to the workflow file")
 	var dryRun *bool = fs.Bool("dry-run", false, "print the execution plan without running commands")
 	var maxConcurrency *int = fs.Int("max-concurrency", 0, "maximum number of concurrent tasks (0 = unlimited)")
+	var quiet *bool = fs.Bool("quiet", false, "suppress live task output and print only the final summary")
 	var targetTask *string = fs.String("target", "", "run only the specified task and its dependencies")
 
 	// Parse flags
@@ -214,6 +215,7 @@ func runCmd(args []string) error {
 	var opts RunOptions = RunOptions{
 		MaxConcurrency: *maxConcurrency,
 		DryRun:         *dryRun,
+		Quiet:          *quiet,
 	}
 
 	return runWorkflowFunc(wf, opts)
