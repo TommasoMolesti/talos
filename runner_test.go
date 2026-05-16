@@ -698,6 +698,24 @@ func TestRunTask_UsesConfiguredShell(t *testing.T) {
 	}
 }
 
+func TestRunTask_ReturnsErrorForMissingConfiguredShell(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var shellPath string = filepath.Join(tempDir, "missing-shell")
+	var task *Task = &Task{
+		Name:    "demo",
+		Shell:   shellPath,
+		Command: "echo configured",
+	}
+
+	var err error = runTask(context.Background(), task)
+	if err == nil {
+		t.Fatal("expected missing shell error")
+	}
+	if !strings.Contains(err.Error(), shellPath) {
+		t.Fatalf("expected error to include missing shell path %q, got %v", shellPath, err)
+	}
+}
+
 func TestTaskShell_DefaultsToSh(t *testing.T) {
 	var shell string = taskShell(&Task{})
 	if shell != "sh" {
