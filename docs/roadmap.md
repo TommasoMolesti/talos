@@ -6,28 +6,6 @@ The roadmap is intentionally narrow. Talos should become easier to understand be
 
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
 
-## `v0.3.0`: Simple Portability
-
-Goal: let workflows choose a shell without turning Talos into a cross-platform command abstraction layer.
-
-Status: complete in the current development branch.
-
-Work in this release should stay PR-sized and easy to review.
-
-Planned work:
-
-- Add workflow-level shell configuration.
-- Optionally allow task-level shell overrides if the implementation stays small.
-- Keep the default behavior unchanged.
-- Document shell behavior, including platform expectations and quoting limitations.
-- Add tests for configured shells and default fallback behavior.
-
-Done when:
-
-- A workflow can opt into `bash`, `zsh`, or another shell explicitly.
-- Existing workflows keep the same behavior.
-- The docs are honest about what Talos does and does not abstract.
-
 ## `v0.4.0`: Run Reporting
 
 Goal: make Talos easy to read while tasks run in parallel and easy to understand after a run finishes.
