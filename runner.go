@@ -63,9 +63,9 @@ type executionSummary struct {
 	Tasks map[string]*taskSummary
 }
 
-// runTask executes a single task command using the system shell.
+// runTask executes a single task command using the configured shell.
 var runTask func(context.Context, *Task) error = func(ctx context.Context, task *Task) error {
-	var cmd *exec.Cmd = exec.CommandContext(ctx, "sh", "-c", task.Command)
+	var cmd *exec.Cmd = exec.CommandContext(ctx, taskShell(task), "-c", task.Command)
 	cmd.Dir = taskDir(task)
 	cmd.Env = taskEnv(task.Env)
 
@@ -81,6 +81,14 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 	}
 
 	return err
+}
+
+// taskShell returns the shell executable a task command should run through.
+func taskShell(task *Task) string {
+	if task.Shell != "" {
+		return task.Shell
+	}
+	return "sh"
 }
 
 // taskDir returns the directory a task command should run from.

@@ -62,6 +62,7 @@ Use workflow defaults for settings that most tasks share. Task-level values over
 ```yaml
 defaults:
   cwd: "."
+  shell: "bash"
   env:
     APP_ENV: "development"
   retries: 1
@@ -76,6 +77,8 @@ tasks:
     cwd: "./backend"
     timeout: 30
 ```
+
+Use `shell` in defaults when most commands rely on the same shell behavior. Override it on a task only when that command genuinely needs another shell.
 
 ## Task-Local Directories And Environment
 

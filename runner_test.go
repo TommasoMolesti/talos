@@ -622,3 +622,43 @@ func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
 		t.Fatalf("expected task output to include env var, got %q", output)
 	}
 }
+
+func TestRunTask_UsesConfiguredShell(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var shellPath string = tempDir + "/fake-shell"
+	var script string = "#!/bin/sh\nprintf 'shell:%s\\n' \"$0\"\nprintf 'arg:%s\\n' \"$1\"\nprintf 'cmd:%s\\n' \"$2\"\n"
+	var err error = os.WriteFile(shellPath, []byte(script), 0o755)
+	if err != nil {
+		t.Fatalf("write fake shell: %v", err)
+	}
+
+	var task *Task = &Task{
+		Name:    "demo",
+		Shell:   shellPath,
+		Command: "echo configured",
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	err = runTask(context.Background(), task)
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "shell:"+shellPath) {
+		t.Fatalf("expected configured shell to run, got %q", output)
+	}
+	if !strings.Contains(output, "arg:-c") || !strings.Contains(output, "cmd:echo configured") {
+		t.Fatalf("expected command to be passed with -c, got %q", output)
+	}
+}
+
+func TestTaskShell_DefaultsToSh(t *testing.T) {
+	var shell string = taskShell(&Task{})
+	if shell != "sh" {
+		t.Fatalf("expected default shell sh, got %q", shell)
+	}
+}

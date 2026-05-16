@@ -12,6 +12,7 @@ type Task struct {
 	Name            string            `yaml:"-"`
 	Description     string            `yaml:"description"`
 	Command         string            `yaml:"command"`
+	Shell           string            `yaml:"shell"`
 	Cwd             string            `yaml:"cwd"`
 	WorkingDir      string            `yaml:"-"`
 	Env             map[string]string `yaml:"env"`
@@ -40,6 +41,7 @@ type TaskConfigLocations struct {
 type WorkflowDefaults struct {
 	Cwd            string            `yaml:"cwd"`
 	WorkingDir     string            `yaml:"-"`
+	Shell          string            `yaml:"shell"`
 	Env            map[string]string `yaml:"env"`
 	Retries        int               `yaml:"-"`
 	RetriesConfig  *int              `yaml:"retries"`

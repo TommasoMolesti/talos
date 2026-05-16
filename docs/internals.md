@@ -47,10 +47,16 @@ Timeouts use a task-scoped context derived from the workflow context. If the tas
 
 ## Command Execution
 
-Task commands run through the system shell:
+Task commands run through `sh` by default:
 
 ```text
 sh -c "<task command>"
+```
+
+Workflow defaults and task-level configuration can set a different shell executable. Talos still invokes it as:
+
+```text
+<shell> -c "<task command>"
 ```
 
 Talos applies task-specific working directories and environment variables before starting the command.

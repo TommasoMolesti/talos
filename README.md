@@ -14,7 +14,7 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 - **Dependency-aware:** tasks run only after their dependencies finish.
 - **Parallel by default:** independent tasks run concurrently.
 - **Safe to preview:** `--dry-run` prints the execution plan before commands run.
-- **Practical controls:** per-task `cwd`, `env`, `retries`, and `timeout`.
+- **Practical controls:** per-task `shell`, `cwd`, `env`, `retries`, and `timeout`.
 - **Easy to document:** `visualize` exports the workflow DAG as Mermaid.
 
 ## Quick Start
@@ -55,6 +55,7 @@ Talos looks for `talos.yaml` in the current directory by default.
 
 ```yaml
 defaults:
+  shell: "bash"
   timeout: 120
 
 tasks:
@@ -118,7 +119,7 @@ Talos is intentionally small, but it demonstrates production-oriented engineerin
 - DAG validation before execution, including missing dependencies and cycles.
 - Deterministic execution plans for predictable dry runs and tests.
 - Concurrent scheduling with cancellation on failure.
-- Per-task retries, timeouts, environment overrides, and working directories.
+- Per-task shell, retries, timeouts, environment overrides, and working directories.
 - User-facing CLI behavior covered by tests.
 - Automated release builds for Linux, macOS, and Windows.
 

@@ -798,6 +798,7 @@ func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
 	var data string = strings.Join([]string{
 		"defaults:",
 		"  cwd: \"../app\"",
+		"  shell: \"bash\"",
 		"  env:",
 		"    APP_ENV: \"dev\"",
 		"    SHARED: \"default\"",
@@ -808,6 +809,7 @@ func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
 		"    command: \"go test ./...\"",
 		"  override:",
 		"    command: \"go build\"",
+		"    shell: \"zsh\"",
 		"    cwd: \"../override\"",
 		"    env:",
 		"      SHARED: \"task\"",
@@ -830,6 +832,9 @@ func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
 	if inherited.WorkingDir != appDir {
 		t.Fatalf("expected inherited working dir %q, got %q", appDir, inherited.WorkingDir)
 	}
+	if inherited.Shell != "bash" {
+		t.Fatalf("expected inherited shell bash, got %q", inherited.Shell)
+	}
 	if inherited.Env["APP_ENV"] != "dev" || inherited.Env["SHARED"] != "default" {
 		t.Fatalf("expected inherited env defaults, got %#v", inherited.Env)
 	}
@@ -843,6 +848,9 @@ func TestLoadWorkflow_AppliesWorkflowDefaults(t *testing.T) {
 	var override *Task = wf.Tasks["override"]
 	if override.WorkingDir != overrideDir {
 		t.Fatalf("expected override working dir %q, got %q", overrideDir, override.WorkingDir)
+	}
+	if override.Shell != "zsh" {
+		t.Fatalf("expected task shell override zsh, got %q", override.Shell)
 	}
 	if override.Env["APP_ENV"] != "dev" || override.Env["SHARED"] != "task" || override.Env["TASK_ONLY"] != "yes" {
 		t.Fatalf("expected merged env with task overrides, got %#v", override.Env)

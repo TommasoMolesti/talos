@@ -95,6 +95,33 @@ tasks:
     cwd: "./services/api"
 ```
 
+## Shell
+
+Talos runs commands through `sh` by default:
+
+```text
+sh -c "<command>"
+```
+
+Use `shell` when a workflow or task needs a different shell executable.
+
+```yaml
+defaults:
+  shell: "bash"
+
+tasks:
+  test:
+    command: "go test ./..."
+
+  release:
+    command: "set -euo pipefail; ./scripts/release.sh"
+    shell: "zsh"
+```
+
+Task-level `shell` values override the workflow default. Talos passes the command to the configured shell as `-c "<command>"`; it does not translate shell syntax, quoting, environment expansion, path behavior, or built-ins across shells or operating systems.
+
+Use a shell name that exists on the machines where the workflow will run, such as `bash`, `zsh`, or an absolute path to a shell executable.
+
 ## Environment Variables
 
 Use `env` for task-specific environment variables.
@@ -158,6 +185,7 @@ Use `defaults` for values shared by most tasks.
 ```yaml
 defaults:
   cwd: "."
+  shell: "bash"
   retries: 1
   timeout: 120
   env:

@@ -153,6 +153,8 @@ func nodeLocation(node *yaml.Node) ConfigLocation {
 
 // normalizeWorkflowDefaults validates and resolves workflow-level defaults.
 func normalizeWorkflowDefaults(wf *Workflow, baseDir string) error {
+	wf.Defaults.Shell = strings.TrimSpace(wf.Defaults.Shell)
+
 	if wf.Defaults.RetriesConfig != nil {
 		if *wf.Defaults.RetriesConfig < 0 {
 			return errors.New("defaults retries must be zero or greater")
@@ -173,6 +175,11 @@ func normalizeWorkflowDefaults(wf *Workflow, baseDir string) error {
 
 // applyTaskDefaults merges workflow defaults into one task.
 func applyTaskDefaults(task *Task, defaults WorkflowDefaults, baseDir string) error {
+	task.Shell = strings.TrimSpace(task.Shell)
+	if task.Shell == "" {
+		task.Shell = defaults.Shell
+	}
+
 	if task.RetriesConfig != nil {
 		if *task.RetriesConfig < 0 {
 			return errors.New("retries must be zero or greater")
@@ -269,7 +276,7 @@ func withLocation(path string, fallback ConfigLocation, err error, locate func()
 
 // validationErrorField infers the config field named by a validation error.
 func validationErrorField(message string) string {
-	for _, field := range []string{"retries", "timeout", "cwd", "env"} {
+	for _, field := range []string{"retries", "timeout", "shell", "cwd", "env"} {
 		if strings.Contains(message, field) {
 			return field
 		}
