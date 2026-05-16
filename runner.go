@@ -54,6 +54,7 @@ const (
 type taskSummary struct {
 	Description string
 	Status      taskStatus
+	Error       string
 	Attempts    int
 	Duration    time.Duration
 	Timeout     time.Duration
@@ -382,6 +383,9 @@ func (s *executionSummary) record(result taskResult) {
 		return
 	}
 	task.Status = result.status
+	if result.err != nil {
+		task.Error = result.err.Error()
+	}
 	task.Attempts = result.attempts
 	task.Duration = result.duration
 	task.Timeout = result.timeout

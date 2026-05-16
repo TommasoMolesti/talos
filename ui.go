@@ -93,6 +93,7 @@ func PrintEnd(total float64, success bool) {
 // PrintSummary prints a final summary of task outcomes for the workflow run.
 func PrintSummary(summary *executionSummary) {
 	var counts map[taskStatus]int = make(map[taskStatus]int)
+	var failedTasks []string
 	var retried []string
 	var timedOut []string
 	var canceled []string
@@ -103,6 +104,9 @@ func PrintSummary(summary *executionSummary) {
 		counts[task.Status]++
 		var label string = formatTaskLabel(name, task.Description)
 		taskLines = append(taskLines, formatSummaryTaskLine(label, task))
+		if task.Status == taskStatusFailed {
+			failedTasks = append(failedTasks, formatFailedSummary(label, task.Error))
+		}
 		if task.Attempts > 1 {
 			retried = append(retried, fmt.Sprintf("%s (%d retries)", label, task.Attempts-1))
 		}
@@ -117,6 +121,7 @@ func PrintSummary(summary *executionSummary) {
 		}
 	}
 
+	sort.Strings(failedTasks)
 	sort.Strings(retried)
 	sort.Strings(timedOut)
 	sort.Strings(canceled)
@@ -134,6 +139,9 @@ func PrintSummary(summary *executionSummary) {
 		counts[taskStatusCanceled],
 		counts[taskStatusSkipped],
 	)
+	if len(failedTasks) > 0 {
+		fmt.Printf("  failed: %s\n", strings.Join(failedTasks, ", "))
+	}
 	if len(retried) > 0 {
 		fmt.Printf("  retries: %s\n", strings.Join(retried, ", "))
 	}
@@ -168,6 +176,14 @@ func formatTaskShell(task *Task) string {
 		return ""
 	}
 	return fmt.Sprintf(" [shell: %s]", taskShell(task))
+}
+
+// formatFailedSummary renders a failed task with its command error when available.
+func formatFailedSummary(label string, err string) string {
+	if err == "" {
+		return label
+	}
+	return fmt.Sprintf("%s (%s)", label, err)
 }
 
 // formatSummaryTaskLine renders one deterministic task result row.

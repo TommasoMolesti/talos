@@ -40,7 +40,7 @@ Talos uses fail-fast execution:
 - Running commands receive cancellation through that context.
 - Tasks that were ready but not yet running, or tasks blocked behind failed dependencies, are marked as skipped.
 - Task output lines are prefixed with the task name so parallel logs stay attributable.
-- The final summary shows success, failure, timeout, cancellation, retries, skipped tasks, and per-task durations.
+- The final summary shows success, failure, timeout, cancellation, retries, skipped tasks, failure errors, and per-task durations.
 
 Retries happen inside a task attempt loop before the scheduler sees the final result. A task with `retries: 2` can run up to three times. Only the final result is used to decide whether dependents can run.
 

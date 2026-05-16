@@ -563,13 +563,22 @@ func TestRunWorkflowParallel_RetriesExhausted(t *testing.T) {
 		},
 	}
 
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
 	var err error = RunWorkflowParallel(wf, RunOptions{})
+	restore()
 	if err == nil {
 		t.Fatal("expected workflow error")
 	}
 
 	if attempts != 3 {
 		t.Fatalf("expected 3 attempts, got %d", attempts)
+	}
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "failed: flaky (still failing)") {
+		t.Fatalf("expected failed summary to include task error, got %q", output)
 	}
 }
 

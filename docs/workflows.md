@@ -222,6 +222,8 @@ Retries are handled before a task is considered failed. For example, `retries: 2
 
 Timeouts stop the current task and fail the workflow immediately. Timed-out tasks are reported separately from ordinary command failures.
 
+When a task fails, the final summary includes the failed task name and the command error returned by the shell or process.
+
 ## Defaults
 
 Use `defaults` for values shared by most tasks.
