@@ -31,6 +31,38 @@ Task names must be unique. The task name is used by `depends_on`, `--target`, dr
 
 Every task must define a non-empty `command`. Talos validates this before dry-run or execution.
 
+## Supported Fields
+
+Top-level workflow fields:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `tasks` | Yes | Map of task names to task definitions. |
+| `defaults` | No | Shared task settings applied before task-level overrides. |
+
+Task fields:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `command` | Yes | Shell command to run. |
+| `description` | No | Human-readable task label for dry-run and summary output. |
+| `depends_on` | No | List of task names that must succeed first. |
+| `cwd` | No | Workflow-relative or absolute working directory. |
+| `shell` | No | Shell executable used as `<shell> -c "<command>"`. |
+| `env` | No | Environment variable overrides. |
+| `retries` | No | Number of retry attempts after the first failure. |
+| `timeout` | No | Timeout in seconds. |
+
+Default fields:
+
+| Field | Description |
+| --- | --- |
+| `cwd` | Shared working directory. |
+| `shell` | Shared shell executable. |
+| `env` | Shared environment variables. |
+| `retries` | Shared retry count. |
+| `timeout` | Shared timeout in seconds. |
+
 ## Dependencies
 
 Use `depends_on` when a task must wait for another task.
