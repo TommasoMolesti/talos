@@ -55,7 +55,6 @@ Talos looks for `talos.yaml` in the current directory by default.
 
 ```yaml
 defaults:
-  shell: "bash"
   timeout: 120
 
 tasks:
@@ -111,6 +110,12 @@ Preview any example:
 
 ```bash
 talos run --file examples/go.yaml --dry-run
+```
+
+To see explicit shell selection, preview the shell configuration example:
+
+```bash
+talos run --file examples/shell.yaml --dry-run
 ```
 
 ## Project Highlights
