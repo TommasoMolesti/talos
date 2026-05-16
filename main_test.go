@@ -890,6 +890,44 @@ func TestLoadWorkflow_ParsesShellExample(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_TrimsShellValuesAndIgnoresBlankOverride(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "shell.yaml")
+	var data string = strings.Join([]string{
+		"defaults:",
+		"  shell: \"  bash  \"",
+		"tasks:",
+		"  inherited:",
+		"    command: \"echo inherited\"",
+		"  blank:",
+		"    command: \"echo blank\"",
+		"    shell: \"   \"",
+		"  override:",
+		"    command: \"echo override\"",
+		"    shell: \"  zsh  \"",
+	}, "\n")
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var wf *Workflow
+	wf, err = loadWorkflow(workflowPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if wf.Tasks["inherited"].Shell != "bash" {
+		t.Fatalf("expected inherited shell bash, got %q", wf.Tasks["inherited"].Shell)
+	}
+	if wf.Tasks["blank"].Shell != "bash" {
+		t.Fatalf("expected blank task shell to inherit bash, got %q", wf.Tasks["blank"].Shell)
+	}
+	if wf.Tasks["override"].Shell != "zsh" {
+		t.Fatalf("expected override shell zsh, got %q", wf.Tasks["override"].Shell)
+	}
+}
+
 func TestLoadWorkflow_RejectsNegativeTaskTimeout(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "invalid-timeout.yaml")
