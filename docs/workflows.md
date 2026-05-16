@@ -162,6 +162,8 @@ Use a shell name that exists on the machines where the workflow will run, such a
 
 Dry-run output includes non-default shell selections so you can see which shell each configured task will use before commands run.
 
+Validation and dry-run do not check whether the configured shell executable exists. A missing shell is reported when Talos tries to run the task.
+
 See [the shell example](../examples/shell.yaml) for workflow-level shell configuration and a task-level override.
 
 ## Environment Variables
