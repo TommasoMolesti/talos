@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -736,6 +737,43 @@ func TestRunCLI_TargetDryRunPrintsOnlyRequiredTasks(t *testing.T) {
 	}
 	if !strings.Contains(output, "Stage 1: install") || !strings.Contains(output, "Stage 2: build") || !strings.Contains(output, "Stage 3: test") {
 		t.Fatalf("expected targeted dry-run output, got %q", output)
+	}
+}
+
+func TestRunCLI_JSONSummaryPrintsParseableSummary(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "json-summary.yaml")
+	var data string = "tasks:\n  demo:\n    description: \"Demo task\"\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStdout(t, []string{"run", "--file", workflowPath, "--summary", "json"})
+	if exitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d; output=%q", exitCode, output)
+	}
+	if strings.Contains(output, "[talos]") || strings.Contains(output, "[demo] demo") {
+		t.Fatalf("expected JSON-only output, got %q", output)
+	}
+
+	var summary struct {
+		Success bool `json:"success"`
+		Counts  map[string]int
+		Tasks   []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Status      string `json:"status"`
+		} `json:"tasks"`
+	}
+	err = json.Unmarshal([]byte(output), &summary)
+	if err != nil {
+		t.Fatalf("parse JSON summary: %v; output=%q", err, output)
+	}
+	if !summary.Success || summary.Counts["success"] != 1 || len(summary.Tasks) != 1 || summary.Tasks[0].Name != "demo" || summary.Tasks[0].Description != "Demo task" || summary.Tasks[0].Status != "success" {
+		t.Fatalf("expected successful JSON summary, got %#v", summary)
 	}
 }
 
