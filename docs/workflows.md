@@ -226,6 +226,8 @@ When a task fails, the final summary includes the failed task name and the comma
 
 Use `talos run --quiet` to suppress live task output while keeping the final summary.
 
+Use `talos run --verbose` to print each task's shell, working directory, retry count, timeout, and command before it runs. Verbose output does not print environment variable values.
+
 ## Defaults
 
 Use `defaults` for values shared by most tasks.

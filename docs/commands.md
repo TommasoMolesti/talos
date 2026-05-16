@@ -67,6 +67,12 @@ Suppress live task output while keeping the final summary:
 talos run --quiet
 ```
 
+Print task execution context before each task runs:
+
+```bash
+talos run --verbose
+```
+
 Shell selection is configured in the workflow file with `defaults.shell` or task-level `shell`, not with a run flag. See [Workflow Configuration](workflows.md#shell).
 
 ## `talos validate`

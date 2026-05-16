@@ -17,14 +17,20 @@ var (
 	fail func(a ...interface{}) string = color.New(color.FgRed).SprintFunc()
 )
 
-var quietOutput bool
+var (
+	quietOutput   bool
+	verboseOutput bool
+)
 
-// SetQuietOutput updates live output suppression and returns a restore function.
-func SetQuietOutput(quiet bool) func() {
-	var previous bool = quietOutput
+// SetOutputMode updates live output settings and returns a restore function.
+func SetOutputMode(quiet bool, verbose bool) func() {
+	var previousQuiet bool = quietOutput
+	var previousVerbose bool = verboseOutput
 	quietOutput = quiet
+	verboseOutput = verbose
 	return func() {
-		quietOutput = previous
+		quietOutput = previousQuiet
+		verboseOutput = previousVerbose
 	}
 }
 
@@ -50,17 +56,38 @@ func PrintDryRun(plan [][]string, wf *Workflow) {
 }
 
 // PrintTaskStart prints the header for a task before execution.
-//
-// It includes the task name and optionally its dependencies.
-func PrintTaskStart(name string, deps []string) {
+func PrintTaskStart(task *Task) {
 	if quietOutput {
 		return
 	}
-	if len(deps) > 0 {
-		fmt.Printf("%s %s (depends on: %v)\n", run("▶"), name, deps)
+	if len(task.DependsOn) > 0 {
+		fmt.Printf("%s %s (depends on: %v)\n", run("▶"), task.Name, task.DependsOn)
 	} else {
-		fmt.Printf("%s %s\n", run("▶"), name)
+		fmt.Printf("%s %s\n", run("▶"), task.Name)
 	}
+	if verboseOutput {
+		PrintTaskVerbose(task)
+	}
+}
+
+// PrintTaskVerbose prints task execution context for verbose runs.
+func PrintTaskVerbose(task *Task) {
+	if quietOutput {
+		return
+	}
+	var details []string
+	details = append(details, fmt.Sprintf("shell=%s", taskShell(task)))
+	if taskDir(task) != "" {
+		details = append(details, fmt.Sprintf("cwd=%s", taskDir(task)))
+	}
+	if task.Retries > 0 {
+		details = append(details, fmt.Sprintf("retries=%d", task.Retries))
+	}
+	if task.TimeoutDuration > 0 {
+		details = append(details, fmt.Sprintf("timeout=%s", task.TimeoutDuration))
+	}
+	fmt.Printf("  [%s] %s\n", task.Name, strings.Join(details, " "))
+	fmt.Printf("  [%s] command: %s\n", task.Name, task.Command)
 }
 
 // PrintTaskRetry prints a retry message before a new attempt begins.

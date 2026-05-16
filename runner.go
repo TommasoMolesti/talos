@@ -21,6 +21,8 @@ type RunOptions struct {
 	DryRun bool
 	// Quiet suppresses live task output while keeping the final summary.
 	Quiet bool
+	// Verbose prints task execution context before each task runs.
+	Verbose bool
 }
 
 type taskResult struct {
@@ -139,7 +141,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		return nil
 	}
 
-	restoreOutput := SetQuietOutput(opts.Quiet)
+	restoreOutput := SetOutputMode(opts.Quiet, opts.Verbose)
 	defer restoreOutput()
 
 	PrintStart()
@@ -199,7 +201,7 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		}
 
 		var start time.Time = time.Now()
-		PrintTaskStart(task.Name, task.DependsOn)
+		PrintTaskStart(task)
 
 		var maxAttempts int = task.Retries + 1
 		var err error

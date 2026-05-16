@@ -86,7 +86,7 @@ func TestRunCLI_HelpReturnsSuccess(t *testing.T) {
 		t.Fatalf("expected usage examples, got %q", output)
 	}
 
-	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-quiet") || !strings.Contains(output, "-target") {
+	if !strings.Contains(output, "-file") || !strings.Contains(output, "-dry-run") || !strings.Contains(output, "-max-concurrency") || !strings.Contains(output, "-quiet") || !strings.Contains(output, "-target") || !strings.Contains(output, "-verbose") {
 		t.Fatalf("expected help output, got %q", output)
 	}
 }
@@ -425,6 +425,51 @@ func TestRunCmd_PassesQuietOption(t *testing.T) {
 
 	if !gotOptions.Quiet {
 		t.Fatal("expected quiet to be true")
+	}
+}
+
+func TestRunCmd_PassesVerboseOption(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "custom.yaml")
+	var err error = os.WriteFile(workflowPath, []byte("tasks:\n  demo:\n    command: \"echo demo\"\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var origLoad func(string) (*Workflow, error) = loadWorkflowFunc
+	var origRun func(*Workflow, RunOptions) error = runWorkflowFunc
+	defer func() {
+		loadWorkflowFunc = origLoad
+		runWorkflowFunc = origRun
+	}()
+
+	loadWorkflowFunc = func(path string) (*Workflow, error) {
+		return origLoad(path)
+	}
+
+	var gotOptions RunOptions
+	runWorkflowFunc = func(wf *Workflow, opts RunOptions) error {
+		gotOptions = opts
+		return nil
+	}
+
+	err = runCmd([]string{"--file", workflowPath, "--verbose"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !gotOptions.Verbose {
+		t.Fatal("expected verbose to be true")
+	}
+}
+
+func TestRunCmd_RejectsQuietAndVerboseTogether(t *testing.T) {
+	var err error = runCmd([]string{"--quiet", "--verbose"})
+	if err == nil {
+		t.Fatal("expected quiet and verbose conflict")
+	}
+	if !strings.Contains(err.Error(), "--quiet and --verbose cannot be used together") {
+		t.Fatalf("expected quiet and verbose conflict, got %v", err)
 	}
 }
 

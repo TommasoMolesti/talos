@@ -615,6 +615,49 @@ func TestRunWorkflowParallel_QuietSuppressesLiveOutput(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_VerbosePrintsTaskContext(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		PrintTaskOutputLine(task.Name, "live output")
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"demo": {
+				Name:            "demo",
+				Command:         "echo demo",
+				Shell:           "bash",
+				Cwd:             "./workspace",
+				Retries:         2,
+				TimeoutDuration: 5 * time.Second,
+			},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{Verbose: true})
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "[demo] shell=bash cwd=./workspace retries=2 timeout=5s") {
+		t.Fatalf("expected verbose task context, got %q", output)
+	}
+	if !strings.Contains(output, "[demo] command: echo demo") {
+		t.Fatalf("expected verbose command context, got %q", output)
+	}
+	if !strings.Contains(output, "[demo] live output") {
+		t.Fatalf("expected regular live output to remain visible, got %q", output)
+	}
+}
+
 func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testing.T) {
 	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
