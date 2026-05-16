@@ -711,6 +711,65 @@ func TestRunWorkflowParallel_PrintsJSONSummary(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_PrintsJSONSummaryOnFailure(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	runTask = func(_ context.Context, task *Task) error {
+		if task.Name == "fail" {
+			return errors.New("boom")
+		}
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"fail":    {Name: "fail", Description: "Broken task", Command: "exit 1"},
+			"blocked": {Name: "blocked", Description: "Blocked task", Command: "echo blocked", DependsOn: []string{"fail"}},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{SummaryFormat: "json"})
+	restore()
+	if err == nil {
+		t.Fatal("expected workflow error")
+	}
+
+	var summary struct {
+		Success bool `json:"success"`
+		Counts  map[string]int
+		Tasks   []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Status      string `json:"status"`
+			Error       string `json:"error"`
+		} `json:"tasks"`
+	}
+	err = json.Unmarshal(stdout.Bytes(), &summary)
+	if err != nil {
+		t.Fatalf("parse JSON summary: %v; output=%q", err, stdout.String())
+	}
+	if summary.Success || summary.Counts["failed"] != 1 || summary.Counts["skipped"] != 1 {
+		t.Fatalf("expected failed JSON summary counts, got %#v", summary)
+	}
+
+	var statuses map[string]string = make(map[string]string)
+	var errorsByTask map[string]string = make(map[string]string)
+	for _, task := range summary.Tasks {
+		statuses[task.Name] = task.Status
+		errorsByTask[task.Name] = task.Error
+	}
+	if statuses["fail"] != "failed" || errorsByTask["fail"] != "boom" {
+		t.Fatalf("expected failed task error in JSON summary, got statuses=%#v errors=%#v", statuses, errorsByTask)
+	}
+	if statuses["blocked"] != "skipped" {
+		t.Fatalf("expected blocked task to be skipped, got statuses=%#v", statuses)
+	}
+}
+
 func TestRunWorkflowParallel_PrintsSummaryWithTimeoutsAndSkipsOnFailure(t *testing.T) {
 	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()
