@@ -29,7 +29,7 @@ func PrintDryRun(plan [][]string, wf *Workflow) {
 		fmt.Printf("%s Stage %d: %s\n", run("▶"), i+1, strings.Join(stage, ", "))
 		for _, name := range stage {
 			var task *Task = wf.Tasks[name]
-			fmt.Printf("  - %s: %s\n", formatTaskLabel(name, task.Description), task.Command)
+			fmt.Printf("  - %s%s: %s\n", formatTaskLabel(name, task.Description), formatTaskShell(task), task.Command)
 		}
 		fmt.Println()
 	}
@@ -160,6 +160,14 @@ func formatTaskLabel(name string, description string) string {
 		return name
 	}
 	return fmt.Sprintf("%s - %s", name, description)
+}
+
+// formatTaskShell returns dry-run shell context for tasks using a non-default shell.
+func formatTaskShell(task *Task) string {
+	if taskShell(task) == "sh" {
+		return ""
+	}
+	return fmt.Sprintf(" [shell: %s]", taskShell(task))
 }
 
 // formatSummaryTaskLine renders one deterministic task result row.

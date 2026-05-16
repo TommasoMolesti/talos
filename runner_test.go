@@ -377,11 +377,41 @@ func TestRunWorkflowParallel_DryRunDoesNotExecuteTasks(t *testing.T) {
 	if !strings.Contains(output, "A - Prepare workspace: echo A") {
 		t.Fatalf("expected description in dry-run output, got %q", output)
 	}
+	if strings.Contains(output, "[shell:") {
+		t.Fatalf("did not expect default shell details in dry-run output, got %q", output)
+	}
 	if !strings.Contains(output, "Stage 2: B, C") {
 		t.Fatalf("expected stage 2 output, got %q", output)
 	}
 	if !strings.Contains(output, "Stage 3: D") {
 		t.Fatalf("expected stage 3 output, got %q", output)
+	}
+}
+
+func TestRunWorkflowParallel_DryRunShowsConfiguredShells(t *testing.T) {
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"build": {Name: "build", Description: "Build app", Command: "npm run build", Shell: "bash"},
+			"test":  {Name: "test", Command: "npm test", Shell: "zsh", DependsOn: []string{"build"}},
+		},
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = RunWorkflowParallel(wf, RunOptions{DryRun: true})
+	if err != nil {
+		restore()
+		t.Fatalf("unexpected error: %v", err)
+	}
+	restore()
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "build - Build app [shell: bash]: npm run build") {
+		t.Fatalf("expected bash shell in dry-run output, got %q", output)
+	}
+	if !strings.Contains(output, "test [shell: zsh]: npm test") {
+		t.Fatalf("expected zsh shell in dry-run output, got %q", output)
 	}
 }
 
