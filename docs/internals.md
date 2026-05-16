@@ -46,6 +46,16 @@ Retries happen inside a task attempt loop before the scheduler sees the final re
 
 Timeouts use a task-scoped context derived from the workflow context. If the task context reaches its deadline, the task is reported as timed out and the whole workflow fails.
 
+## Output Modes
+
+Default run output is human-readable. Talos prints task lifecycle events as tasks start, retry, finish, fail, time out, or cancel. Command output is prefixed with the task name so parallel logs remain attributable.
+
+`--quiet` suppresses live lifecycle and command output while keeping the final human summary and final done or failed line.
+
+`--verbose` keeps normal live output and adds task execution context before each task runs: shell, working directory when configured, retry count, timeout, and command. It does not print environment variable values.
+
+`--summary json` suppresses live human output and writes only a machine-readable final summary to stdout. The JSON summary includes overall success, total duration, status counts, and per-task status, attempts, duration, timeout, description, and error details.
+
 ## Command Execution
 
 Task commands run through `sh` by default:

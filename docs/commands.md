@@ -79,6 +79,8 @@ Print only the final summary as JSON:
 talos run --summary json
 ```
 
+`--quiet` and `--verbose` cannot be used together. `--summary json` cannot be used with `--verbose` because JSON mode writes only machine-readable summary output.
+
 Shell selection is configured in the workflow file with `defaults.shell` or task-level `shell`, not with a run flag. See [Workflow Configuration](workflows.md#shell).
 
 ## `talos validate`
