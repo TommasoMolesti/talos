@@ -6,26 +6,6 @@ The roadmap is intentionally narrow. Talos should become easier to understand be
 
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
 
-## `v0.5.0`: Adoption Polish
-
-Goal: make the project easy to install, evaluate, and contribute to.
-
-Work in this release should stay PR-sized and easy to review.
-
-Planned work:
-
-- [x] Add contribution guidelines.
-- [x] Add issue templates for bugs and feature requests.
-- [x] Improve one existing example so it feels realistic without becoming a demo app.
-- [x] Add a short comparison section explaining when to use Talos instead of `make`, npm scripts, or CI-only pipelines.
-- [x] Keep install options focused on release binaries, the install script, and `go install`.
-
-Done when:
-
-- A new user can install Talos, run a realistic example, and understand the project in under 10 minutes.
-- A contributor can find the test command, coding expectations, and release process without reading source code.
-- The project looks finished without depending on package-manager sprawl.
-
 ## `v1.0.0`: Stable Release
 
 Goal: stabilize the workflow schema and CLI behavior.
