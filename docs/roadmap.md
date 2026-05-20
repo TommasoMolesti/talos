@@ -14,11 +14,11 @@ Work in this release should stay PR-sized and easy to review.
 
 Planned work:
 
-- Add contribution guidelines.
-- Add issue templates for bugs and feature requests.
-- Improve one existing example so it feels realistic without becoming a demo app.
-- Add a short comparison section explaining when to use Talos instead of `make`, npm scripts, or CI-only pipelines.
-- Keep install options focused on release binaries, the install script, and `go install`.
+- [x] Add contribution guidelines.
+- [x] Add issue templates for bugs and feature requests.
+- [x] Improve one existing example so it feels realistic without becoming a demo app.
+- [x] Add a short comparison section explaining when to use Talos instead of `make`, npm scripts, or CI-only pipelines.
+- [x] Keep install options focused on release binaries, the install script, and `go install`.
 
 Done when:
 

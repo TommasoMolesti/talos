@@ -1,31 +1,73 @@
 defaults:
   cwd: "."
+  env:
+    CI: "1"
   timeout: 180
 
 tasks:
+  verify-layout:
+    description: "Check expected workspace folders"
+    command: "test -d services/api && test -d apps/web && test -d packages/shared"
+
+  api-lint:
+    description: "Run backend lint checks"
+    command: "go vet ./..."
+    cwd: "./services/api"
+    depends_on: ["verify-layout"]
+
   api-test:
     description: "Run backend tests"
     command: "go test ./..."
     cwd: "./services/api"
+    depends_on: ["api-lint"]
+
+  api-build:
+    description: "Build backend service"
+    command: "go build -o ../../dist/api ./cmd/api"
+    cwd: "./services/api"
+    depends_on: ["api-test"]
 
   web-install:
     description: "Install frontend dependencies"
-    command: "npm install"
+    command: "npm ci"
     cwd: "./apps/web"
+    depends_on: ["verify-layout"]
+
+  web-lint:
+    description: "Run frontend lint checks"
+    command: "npm run lint"
+    cwd: "./apps/web"
+    depends_on: ["web-install"]
 
   web-test:
     description: "Run frontend tests"
-    command: "npm test"
+    command: "npm test -- --runInBand"
     cwd: "./apps/web"
+    env:
+      NODE_ENV: "test"
     depends_on: ["web-install"]
 
   web-build:
     description: "Build frontend assets"
     command: "npm run build"
     cwd: "./apps/web"
-    depends_on: ["web-test"]
+    depends_on: ["web-lint", "web-test"]
+
+  shared-package:
+    description: "Pack shared workspace package"
+    command: "npm pack --pack-destination ../../dist"
+    cwd: "./packages/shared"
+    depends_on: ["verify-layout"]
+
+  e2e:
+    description: "Run smoke tests against built services"
+    command: "npm run test:e2e"
+    cwd: "./apps/web"
+    retries: 1
+    timeout: 240
+    depends_on: ["api-build", "web-build"]
 
   package:
     description: "Package the full application"
-    command: "tar -czf dist/app.tar.gz services apps"
-    depends_on: ["api-test", "web-build"]
+    command: "tar -czf dist/app.tar.gz dist apps/web/dist"
+    depends_on: ["e2e", "shared-package"]

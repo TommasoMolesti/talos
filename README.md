@@ -19,13 +19,15 @@ In Greek mythology, **Talos** was a giant bronze automatonâ€”the first "robot"â€
 
 ## Quick Start
 
-Install Talos:
+Install Talos from the latest release with the install script:
 
 ```bash
 sh -c "$(curl -sfL https://raw.githubusercontent.com/TommasoMolesti/talos/main/scripts/install.sh)"
 ```
 
-Or install with Go:
+Or download a release binary from the GitHub Releases page and place it on your `PATH`.
+
+If you already use Go, install from source with:
 
 ```bash
 go install github.com/TommasoMolesti/talos@latest
@@ -115,11 +117,27 @@ Preview any example:
 talos run --file examples/go.yaml --dry-run
 ```
 
+The monorepo example shows a more complete local release path with backend checks, frontend checks, smoke tests, workspace packaging, task-local directories, environment overrides, retries, and timeouts:
+
+```bash
+talos run --file examples/monorepo.yaml --dry-run
+```
+
 To see explicit shell selection, preview the shell configuration example:
 
 ```bash
 talos run --file examples/shell.yaml --dry-run
 ```
+
+## When To Use Talos
+
+Use Talos when a repository has a handful of repeatable local tasks with real dependencies: setup before tests, lint and tests in parallel, build after checks, or service startup before smoke tests.
+
+Compared with `make`, Talos gives you YAML configuration, built-in DAG validation, deterministic dry-runs, task summaries, timeouts, retries, and cross-platform release binaries without relying on Makefile syntax.
+
+Compared with npm scripts, Talos works across Go, Python, Docker, shell, and monorepo tasks instead of living inside one package manager. It is useful when one workflow needs to coordinate several tools.
+
+Compared with CI-only pipelines, Talos runs the same dependency-aware workflow on a developer machine before a commit. It does not replace CI, hosted runners, secrets management, or deployment approvals.
 
 ## Project Highlights
 
@@ -134,6 +152,7 @@ Talos is intentionally small, but it demonstrates production-oriented engineerin
 
 ## Documentation
 
+- [Contributing](CONTRIBUTING.md)
 - [Workflow Configuration](docs/workflows.md)
 - [Command Reference](docs/commands.md)
 - [Workflow Patterns](docs/patterns.md)
