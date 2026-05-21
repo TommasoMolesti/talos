@@ -61,6 +61,8 @@ Limit the number of tasks running at the same time:
 talos run --max-concurrency 2
 ```
 
+Use `0` for unlimited concurrency, which is the default. Negative values are rejected.
+
 Suppress live task output while keeping the final summary:
 
 ```bash

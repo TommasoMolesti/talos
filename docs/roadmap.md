@@ -14,7 +14,7 @@ Planned work:
 
 - Freeze the supported workflow schema for `v1.x`. (In progress: unsupported workflow fields are rejected.)
 - Document compatibility expectations for workflow files. (In progress: workflow compatibility notes are documented.)
-- Audit defaults, failure behavior, and CLI output for consistency.
+- Audit defaults, failure behavior, and CLI output for consistency. (In progress: run flag validation now rejects inconsistent values.)
 - Test the release candidate against real Go, Node.js, Python, Docker, and monorepo workflows.
 - Review all examples and docs against the final `v1.0.0` behavior.
 

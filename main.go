@@ -201,6 +201,9 @@ func runCmd(args []string) error {
 	if *quiet && *verbose {
 		return fmt.Errorf("--quiet and --verbose cannot be used together")
 	}
+	if *maxConcurrency < 0 {
+		return fmt.Errorf("--max-concurrency must be zero or greater")
+	}
 	if *summaryFormat != "human" && *summaryFormat != "json" {
 		return fmt.Errorf("--summary must be human or json")
 	}

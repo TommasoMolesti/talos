@@ -509,6 +509,16 @@ func TestRunCmd_RejectsQuietAndVerboseTogether(t *testing.T) {
 	}
 }
 
+func TestRunCmd_RejectsNegativeMaxConcurrency(t *testing.T) {
+	var err error = runCmd([]string{"--max-concurrency", "-1"})
+	if err == nil {
+		t.Fatal("expected negative max concurrency error")
+	}
+	if !strings.Contains(err.Error(), "--max-concurrency must be zero or greater") {
+		t.Fatalf("expected max concurrency validation error, got %v", err)
+	}
+}
+
 func TestRunCmd_RejectsUnknownSummaryFormat(t *testing.T) {
 	var err error = runCmd([]string{"--summary", "xml"})
 	if err == nil {
