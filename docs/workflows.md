@@ -87,6 +87,8 @@ tasks:
 
 Talos validates dependencies before running commands. If a dependency is missing or the workflow contains a cycle, execution stops with an error.
 
+Each task should list a dependency only once. Duplicate `depends_on` entries are rejected during validation because they describe the same graph edge twice.
+
 ## Parallel Execution
 
 Tasks without a dependency relationship can run at the same time.

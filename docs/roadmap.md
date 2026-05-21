@@ -12,9 +12,7 @@ Goal: stabilize the workflow schema and CLI behavior.
 
 Planned work:
 
-- Freeze the supported workflow schema for `v1.x`. (In progress: unsupported workflow fields are rejected.)
-- Document compatibility expectations for workflow files. (In progress: workflow compatibility notes are documented.)
-- Audit defaults, failure behavior, and CLI output for consistency. (In progress: run flag validation now rejects inconsistent values.)
+- Audit defaults, failure behavior, and CLI output for consistency.
 - Test the release candidate against real Go, Node.js, Python, Docker, and monorepo workflows.
 - Review all examples and docs against the final `v1.0.0` behavior.
 
@@ -28,11 +26,9 @@ Done when:
 
 Talos should reach a clear `v1.0.0` and then enter maintenance mode. The project is not meant to grow for years through unrelated feature areas.
 
-The project is considered complete when:
+Remaining finish-line checks:
 
-- The workflow schema is stable and documented.
 - Execution semantics are documented and covered by tests.
-- Shell configuration is simple and predictable.
 - Run reporting makes parallel execution easy to follow.
 - README, examples, command docs, and internals docs agree with the implementation.
 - Release artifacts can be built and verified from a clean tag.

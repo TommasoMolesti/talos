@@ -856,6 +856,37 @@ func TestValidateCLI_MissingTaskCommandReturnsFailure(t *testing.T) {
 	}
 }
 
+func TestValidateCLI_DuplicateDependencyReturnsFailure(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-dependency.yaml")
+	var data string = strings.Join([]string{
+		"tasks:",
+		"  test:",
+		"    command: \"go test ./...\"",
+		"  build:",
+		"    command: \"go build ./...\"",
+		"    depends_on: [\"test\", \"test\"]",
+	}, "\n")
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"validate", "--file", workflowPath})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+
+	if !strings.Contains(output, "task build depends on test more than once") {
+		t.Fatalf("expected duplicate dependency validation error, got %q", output)
+	}
+	if !strings.Contains(output, workflowPath+":6:26") {
+		t.Fatalf("expected duplicate dependency location, got %q", output)
+	}
+}
+
 func TestValidateCLI_EmptyWorkflowReturnsFailure(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "empty.yaml")

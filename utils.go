@@ -505,6 +505,13 @@ func validateWorkflow(wf *Workflow) error {
 		if strings.TrimSpace(task.Command) == "" {
 			return validationErrorAtTaskField(wf, name, "command", "task %s command is required", name)
 		}
+		var seenDependencies map[string]bool = make(map[string]bool, len(task.DependsOn))
+		for _, dep := range task.DependsOn {
+			if seenDependencies[dep] {
+				return validationErrorAt(wf, name, dep, "task %s depends on %s more than once", name, dep)
+			}
+			seenDependencies[dep] = true
+		}
 	}
 
 	return validateExecutionOrder(wf)
