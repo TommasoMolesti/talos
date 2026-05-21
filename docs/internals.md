@@ -10,6 +10,7 @@ Talos treats each workflow as a Directed Acyclic Graph.
 - Each `depends_on` entry is an edge.
 - A task can run when all of its dependencies have completed successfully.
 - Independent tasks can run in parallel.
+- Ready tasks are queued by task name before scheduling. This keeps constrained runs, such as `--max-concurrency 1`, predictable while still allowing parallel output to interleave when multiple tasks run at once.
 
 For this workflow:
 

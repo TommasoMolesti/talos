@@ -111,7 +111,7 @@ tasks:
     depends_on: ["lint", "test"]
 ```
 
-Here, `lint` and `test` run in parallel after `install`.
+Here, `lint` and `test` run in parallel after `install`. If you limit concurrency, ready tasks are started in task-name order.
 
 ## Descriptions
 

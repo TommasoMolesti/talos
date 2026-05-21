@@ -169,6 +169,35 @@ func TestRunWorkflowParallel_MaxConcurrency(t *testing.T) {
 	}
 }
 
+func TestRunWorkflowParallel_MaxConcurrencyOneStartsReadyTasksInNameOrder(t *testing.T) {
+	var orig func(context.Context, *Task) error = runTask
+	defer func() { runTask = orig }()
+
+	var started []string
+	runTask = func(_ context.Context, task *Task) error {
+		started = append(started, task.Name)
+		return nil
+	}
+
+	var wf *Workflow = &Workflow{
+		Tasks: map[string]*Task{
+			"gamma": {Name: "gamma", Command: "echo gamma"},
+			"alpha": {Name: "alpha", Command: "echo alpha"},
+			"beta":  {Name: "beta", Command: "echo beta"},
+		},
+	}
+
+	var err error = RunWorkflowParallel(wf, RunOptions{MaxConcurrency: 1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var want []string = []string{"alpha", "beta", "gamma"}
+	if strings.Join(started, ",") != strings.Join(want, ",") {
+		t.Fatalf("expected start order %v, got %v", want, started)
+	}
+}
+
 func TestRunWorkflowParallel_FailureDoesNotDeadlock(t *testing.T) {
 	var orig func(context.Context, *Task) error = runTask
 	defer func() { runTask = orig }()

@@ -63,6 +63,8 @@ talos run --max-concurrency 2
 
 Use `0` for unlimited concurrency, which is the default. Negative values are rejected.
 
+When concurrency is limited, Talos starts ready tasks in task-name order. With unlimited concurrency, independent tasks still run in parallel, so their live output can interleave.
+
 Suppress live task output while keeping the final summary:
 
 ```bash

@@ -12,7 +12,6 @@ Goal: stabilize the workflow schema and CLI behavior.
 
 Planned work:
 
-- Audit defaults, failure behavior, and CLI output for consistency.
 - Test the release candidate against real Go, Node.js, Python, Docker, and monorepo workflows.
 - Review all examples and docs against the final `v1.0.0` behavior.
 
@@ -29,7 +28,6 @@ Talos should reach a clear `v1.0.0` and then enter maintenance mode. The project
 Remaining finish-line checks:
 
 - Execution semantics are documented and covered by tests.
-- Run reporting makes parallel execution easy to follow.
 - README, examples, command docs, and internals docs agree with the implementation.
 - Release artifacts can be built and verified from a clean tag.
 

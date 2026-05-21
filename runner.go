@@ -170,26 +170,12 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 	var results chan taskResult = make(chan taskResult, len(wf.Tasks))
 	var started int = 0
 	var completed int = 0
+	var running int = 0
 	var firstErr error
-
-	var sem chan struct{}
-	if opts.MaxConcurrency > 0 {
-		sem = make(chan struct{}, opts.MaxConcurrency)
-	}
 
 	var run func(*Task)
 	run = func(task *Task) {
 		defer wg.Done()
-
-		if sem != nil {
-			select {
-			case sem <- struct{}{}:
-				defer func() { <-sem }()
-			case <-ctx.Done():
-				results <- taskResult{name: task.Name, err: ctx.Err(), status: taskStatusSkipped}
-				return
-			}
-		}
 
 		if ctx.Err() != nil {
 			results <- taskResult{name: task.Name, err: ctx.Err(), status: taskStatusSkipped}
@@ -270,25 +256,32 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 		}
 	}
 
-	var startTask func(string)
-	startTask = func(name string) {
-		if ctx.Err() != nil {
-			return
-		}
-		wg.Add(1)
-		started++
-		go run(wf.Tasks[name])
-	}
-
+	var ready []string
 	for name, count := range inDegree {
 		if count == 0 {
-			startTask(name)
+			ready = append(ready, name)
 		}
 	}
+	sort.Strings(ready)
+
+	var startReadyTasks func()
+	startReadyTasks = func() {
+		for len(ready) > 0 && ctx.Err() == nil && (opts.MaxConcurrency <= 0 || running < opts.MaxConcurrency) {
+			var name string = ready[0]
+			ready = ready[1:]
+			wg.Add(1)
+			started++
+			running++
+			go run(wf.Tasks[name])
+		}
+	}
+
+	startReadyTasks()
 
 	for completed < started {
 		var result taskResult = <-results
 		completed++
+		running--
 		summary.record(result)
 
 		if result.err != nil {
@@ -296,15 +289,23 @@ func RunWorkflowParallel(wf *Workflow, opts RunOptions) error {
 				firstErr = result.err
 				cancel()
 			}
+			startReadyTasks()
 			continue
 		}
 
+		var unlocked []string
 		for _, dep := range dependents[result.name] {
 			inDegree[dep]--
 			if inDegree[dep] == 0 {
-				startTask(dep)
+				unlocked = append(unlocked, dep)
 			}
 		}
+		if len(unlocked) > 0 {
+			sort.Strings(unlocked)
+			ready = append(ready, unlocked...)
+			sort.Strings(ready)
+		}
+		startReadyTasks()
 	}
 
 	wg.Wait()
