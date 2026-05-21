@@ -63,6 +63,14 @@ Default fields:
 | `retries` | Shared retry count. |
 | `timeout` | Shared timeout in seconds. |
 
+## Compatibility
+
+For `v1.x`, Talos treats the fields listed above as the stable workflow schema. Patch and minor releases may fix bugs, improve diagnostics, and add compatible behavior, but they should not remove these fields or change their meaning.
+
+Talos rejects unsupported top-level, `defaults`, and task fields with a file, line, and column error. This keeps typos such as `depend_on` from silently producing a different execution plan.
+
+Workflow files should not rely on undocumented fields, task map ordering, exact human-readable colors or symbols, or shell behavior that is specific to a machine unless the workflow explicitly configures that shell.
+
 ## Dependencies
 
 Use `depends_on` when a task must wait for another task.

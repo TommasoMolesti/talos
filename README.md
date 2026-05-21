@@ -82,6 +82,8 @@ tasks:
 
 In this workflow, `install` runs first. Then `lint` and `test` run in parallel. `build` runs only after both finish.
 
+Talos `v1.x` treats the documented workflow fields as its stable schema and rejects unsupported workflow fields with source locations, so configuration typos fail early. See [Workflow Configuration](docs/workflows.md) for the full schema and compatibility notes.
+
 ## Commands
 
 ```bash

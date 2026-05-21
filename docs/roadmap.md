@@ -12,8 +12,8 @@ Goal: stabilize the workflow schema and CLI behavior.
 
 Planned work:
 
-- Freeze the supported workflow schema for `v1.x`.
-- Document compatibility expectations for workflow files.
+- Freeze the supported workflow schema for `v1.x`. (In progress: unsupported workflow fields are rejected.)
+- Document compatibility expectations for workflow files. (In progress: workflow compatibility notes are documented.)
 - Audit defaults, failure behavior, and CLI output for consistency.
 - Test the release candidate against real Go, Node.js, Python, Docker, and monorepo workflows.
 - Review all examples and docs against the final `v1.0.0` behavior.

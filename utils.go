@@ -36,6 +36,11 @@ func loadWorkflow(path string) (*Workflow, error) {
 	}
 
 	var wf Workflow
+	err = validateWorkflowSchema(&root, path)
+	if err != nil {
+		return nil, err
+	}
+
 	err = root.Decode(&wf)
 	if err != nil {
 		return nil, err
@@ -141,6 +146,101 @@ func mappingValue(node *yaml.Node, key string) *yaml.Node {
 		}
 	}
 	return nil
+}
+
+// validateWorkflowSchema rejects unsupported fields before decoding so typos
+// cannot silently change workflow behavior.
+func validateWorkflowSchema(root *yaml.Node, path string) error {
+	var topLevel *yaml.Node = rootMapping(root)
+	if topLevel == nil {
+		return nil
+	}
+	if topLevel.Kind != yaml.MappingNode {
+		return schemaError(path, nodeLocation(topLevel), "workflow must be a mapping")
+	}
+
+	var topLevelFields map[string]bool = map[string]bool{
+		"defaults": true,
+		"tasks":    true,
+	}
+	var defaultFields map[string]bool = map[string]bool{
+		"cwd":     true,
+		"shell":   true,
+		"env":     true,
+		"retries": true,
+		"timeout": true,
+	}
+	var taskFields map[string]bool = map[string]bool{
+		"command":     true,
+		"cwd":         true,
+		"depends_on":  true,
+		"description": true,
+		"env":         true,
+		"retries":     true,
+		"shell":       true,
+		"timeout":     true,
+	}
+
+	for i := 0; i+1 < len(topLevel.Content); i += 2 {
+		var key *yaml.Node = topLevel.Content[i]
+		var value *yaml.Node = topLevel.Content[i+1]
+		if !topLevelFields[key.Value] {
+			return schemaError(path, nodeLocation(key), "unsupported top-level field %q", key.Value)
+		}
+		if key.Value == "defaults" {
+			var err error = validateMappingFields(path, "defaults", value, defaultFields)
+			if err != nil {
+				return err
+			}
+		}
+		if key.Value == "tasks" {
+			var err error = validateTaskSchema(path, value, taskFields)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// validateTaskSchema rejects unsupported fields in each task definition.
+func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) error {
+	if tasks == nil || tasks.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(tasks.Content); i += 2 {
+		var taskName *yaml.Node = tasks.Content[i]
+		var taskConfig *yaml.Node = tasks.Content[i+1]
+		var err error = validateMappingFields(path, fmt.Sprintf("task %q", taskName.Value), taskConfig, allowed)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateMappingFields rejects unsupported keys from one YAML mapping.
+func validateMappingFields(path string, label string, node *yaml.Node, allowed map[string]bool) error {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		var key *yaml.Node = node.Content[i]
+		if !allowed[key.Value] {
+			return schemaError(path, nodeLocation(key), "unsupported field %q in %s", key.Value, label)
+		}
+	}
+	return nil
+}
+
+// schemaError formats schema validation errors with source locations.
+func schemaError(path string, location ConfigLocation, format string, args ...interface{}) error {
+	var err error = fmt.Errorf(format, args...)
+	if location.Line == 0 {
+		return err
+	}
+	return fmt.Errorf("%s:%d:%d: %w", path, location.Line, location.Column, err)
 }
 
 // nodeLocation converts a YAML node position into a config location.

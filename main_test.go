@@ -1163,3 +1163,69 @@ func TestLoadWorkflow_RejectsNegativeDefaults(t *testing.T) {
 		t.Fatalf("expected defaults validation location, got %v", err)
 	}
 }
+
+func TestLoadWorkflow_RejectsUnknownTopLevelField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "unknown-top-level.yaml")
+	var data string = "version: 1\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected unknown top-level field error")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported top-level field \"version\"") {
+		t.Fatalf("expected unknown top-level field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":1:1") {
+		t.Fatalf("expected unknown top-level field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsUnknownDefaultField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "unknown-default.yaml")
+	var data string = "defaults:\n  path: \".\"\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected unknown default field error")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported field \"path\" in defaults") {
+		t.Fatalf("expected unknown default field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":2:3") {
+		t.Fatalf("expected unknown default field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsUnknownTaskField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "unknown-task-field.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build ./...\"\n    depend_on: [\"test\"]\n  test:\n    command: \"go test ./...\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected unknown task field error")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported field \"depend_on\" in task \"build\"") {
+		t.Fatalf("expected unknown task field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:5") {
+		t.Fatalf("expected unknown task field location, got %v", err)
+	}
+}
