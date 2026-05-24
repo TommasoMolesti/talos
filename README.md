@@ -82,7 +82,7 @@ tasks:
 
 In this workflow, `install` runs first. Then `lint` and `test` run in parallel. `build` runs only after both finish.
 
-Talos `v1.x` treats the documented workflow fields as its stable schema and rejects unsupported workflow fields with source locations, so configuration typos fail early. See [Workflow Configuration](docs/workflows.md) for the full schema and compatibility notes.
+Talos `v1.x` treats the documented workflow fields as its stable schema and rejects unsupported fields, malformed shapes, invalid field types, duplicate keys, and blank identifiers with source locations, so configuration mistakes fail early. See [Workflow Configuration](docs/workflows.md) for the full schema and compatibility notes.
 
 ## Commands
 
@@ -148,7 +148,7 @@ Talos is intentionally small, but it demonstrates production-oriented engineerin
 
 - DAG validation before execution, including missing dependencies and cycles.
 - Deterministic execution plans for predictable dry runs and tests.
-- Concurrent scheduling with cancellation on failure and readable run summaries.
+- Concurrent scheduling with live task output, cancellation on failure, and readable run summaries.
 - Per-task shell, retries, timeouts, environment overrides, and working directories.
 - User-facing CLI behavior covered by tests.
 - Automated release builds for Linux, macOS, and Windows.

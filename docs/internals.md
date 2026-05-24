@@ -72,7 +72,7 @@ Workflow defaults and task-level configuration can set a different shell executa
 <shell> -c "<task command>"
 ```
 
-Talos applies task-specific working directories and environment variables before starting the command. Relative working directories are resolved from the directory containing the workflow file. Output emitted by the command is printed with a stable task prefix:
+Talos applies task-specific working directories and environment variables before starting the command. Relative working directories are resolved from the directory containing the workflow file. Command output is streamed with a stable task prefix:
 
 ```text
 [test] ok ./...
