@@ -1359,6 +1359,28 @@ func TestLoadWorkflow_RejectsDuplicateTaskName(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsBlankTaskName(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "blank-task-name.yaml")
+	var data string = "tasks:\n  \"\":\n    command: \"echo nope\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected blank task name error")
+	}
+
+	if !strings.Contains(err.Error(), "task name is required") {
+		t.Fatalf("expected blank task name error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":2:3") {
+		t.Fatalf("expected blank task name location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsUnknownTaskField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "unknown-task-field.yaml")
@@ -1400,5 +1422,27 @@ func TestLoadWorkflow_RejectsDuplicateTaskField(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":4:5") {
 		t.Fatalf("expected duplicate task field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsBlankDependencyName(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "blank-dependency.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build ./...\"\n    depends_on: [\"\"]\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected blank dependency name error")
+	}
+
+	if !strings.Contains(err.Error(), "task build dependency name is required") {
+		t.Fatalf("expected blank dependency name error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:18") {
+		t.Fatalf("expected blank dependency name location, got %v", err)
 	}
 }

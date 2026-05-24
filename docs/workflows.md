@@ -27,7 +27,7 @@ tasks:
     command: "go build -o talos ."
 ```
 
-Task names must be unique. The task name is used by `depends_on`, `--target`, dry-run output, and execution summaries. Duplicate task names are rejected during schema validation instead of silently overwriting earlier task definitions.
+Task names must be unique and non-empty. The task name is used by `depends_on`, `--target`, dry-run output, and execution summaries. Duplicate or blank task names are rejected during schema validation instead of silently overwriting earlier task definitions.
 
 Every task must define a non-empty `command`. Talos validates this before dry-run or execution.
 
@@ -73,7 +73,7 @@ Workflow files should not rely on undocumented fields, task map ordering, exact 
 
 ## Dependencies
 
-Use `depends_on` when a task must wait for another task.
+Use `depends_on` when a task must wait for another task. Dependency names must be non-empty and must refer to existing tasks.
 
 ```yaml
 tasks:

@@ -218,6 +218,9 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 	for i := 0; i+1 < len(tasks.Content); i += 2 {
 		var taskName *yaml.Node = tasks.Content[i]
 		var taskConfig *yaml.Node = tasks.Content[i+1]
+		if strings.TrimSpace(taskName.Value) == "" {
+			return schemaError(path, nodeLocation(taskName), "task name is required")
+		}
 		if seenTasks[taskName.Value] {
 			return schemaError(path, nodeLocation(taskName), "duplicate task %q", taskName.Value)
 		}
@@ -225,6 +228,24 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 		var err error = validateMappingFields(path, fmt.Sprintf("task %q", taskName.Value), taskConfig, allowed)
 		if err != nil {
 			return err
+		}
+		err = validateDependencyNames(path, taskName.Value, taskConfig)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateDependencyNames rejects blank dependency names before YAML decoding.
+func validateDependencyNames(path string, taskName string, taskConfig *yaml.Node) error {
+	var deps *yaml.Node = mappingValue(taskConfig, "depends_on")
+	if deps == nil || deps.Kind != yaml.SequenceNode {
+		return nil
+	}
+	for _, dep := range deps.Content {
+		if strings.TrimSpace(dep.Value) == "" {
+			return schemaError(path, nodeLocation(dep), "task %s dependency name is required", taskName)
 		}
 	}
 	return nil
@@ -522,6 +543,9 @@ func validateWorkflow(wf *Workflow) error {
 		}
 		var seenDependencies map[string]bool = make(map[string]bool, len(task.DependsOn))
 		for _, dep := range task.DependsOn {
+			if strings.TrimSpace(dep) == "" {
+				return validationErrorAt(wf, name, dep, "task %s dependency name is required", name)
+			}
 			if seenDependencies[dep] {
 				return validationErrorAt(wf, name, dep, "task %s depends on %s more than once", name, dep)
 			}
