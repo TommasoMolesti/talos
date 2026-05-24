@@ -224,6 +224,50 @@ func TestRunCLI_InvalidFlagReturnsFailure(t *testing.T) {
 	}
 }
 
+func TestRunCLI_RejectsUnexpectedCommandArguments(t *testing.T) {
+	var cases []struct {
+		name string
+		args []string
+		want string
+	} = []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "init", args: []string{"init", "extra"}, want: "Init failed: unexpected argument \"extra\""},
+		{name: "run", args: []string{"run", "extra"}, want: "Execution failed: unexpected argument \"extra\""},
+		{name: "validate", args: []string{"validate", "extra"}, want: "Validation failed: unexpected argument \"extra\""},
+		{name: "visualize", args: []string{"visualize", "extra"}, want: "Visualization failed: unexpected argument \"extra\""},
+		{name: "version", args: []string{"version", "extra"}, want: "Version failed: unexpected argument \"extra\""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var exitCode int
+			var output string
+			exitCode, output = runCLIWithCapturedStderr(t, tc.args)
+			if exitCode != 1 {
+				t.Fatalf("expected exit code 1, got %d", exitCode)
+			}
+			if !strings.Contains(output, tc.want) {
+				t.Fatalf("expected unexpected argument output %q, got %q", tc.want, output)
+			}
+		})
+	}
+}
+
+func TestRunCLI_RejectsMultipleUnexpectedCommandArguments(t *testing.T) {
+	var exitCode int
+	var output string
+	exitCode, output = runCLIWithCapturedStderr(t, []string{"run", "first", "second"})
+	if exitCode != 1 {
+		t.Fatalf("expected exit code 1, got %d", exitCode)
+	}
+	if !strings.Contains(output, "Execution failed: unexpected arguments: first, second") {
+		t.Fatalf("expected multiple unexpected arguments output, got %q", output)
+	}
+}
+
 func TestCLI_UnknownCommandPrintsGuidance(t *testing.T) {
 	var exitCode int
 	var output string

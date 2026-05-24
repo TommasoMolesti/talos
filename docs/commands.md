@@ -9,6 +9,8 @@ talos -h
 talos run -h
 ```
 
+Commands reject unexpected positional arguments. For example, use `talos run --file workflow.yaml`, not `talos run workflow.yaml`.
+
 ## `talos init`
 
 Create a starter workflow file.

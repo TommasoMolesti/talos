@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -91,6 +92,10 @@ func runCLI(args []string) int {
 		}
 		return 0
 	case "version":
+		if len(args) > 1 {
+			fmt.Fprintln(os.Stderr, "Version failed:", unexpectedArgsError(args[1:]))
+			return 1
+		}
 		printVersion()
 		return 0
 	default:
@@ -128,6 +133,9 @@ func initCmd(args []string) error {
 			return err
 		}
 		return fmt.Errorf("parse flags: %w", err)
+	}
+	if fs.NArg() > 0 {
+		return unexpectedArgsError(fs.Args())
 	}
 
 	var flag int = os.O_WRONLY | os.O_CREATE | os.O_EXCL
@@ -198,6 +206,9 @@ func runCmd(args []string) error {
 		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
+	if fs.NArg() > 0 {
+		return unexpectedArgsError(fs.Args())
+	}
 	if *quiet && *verbose {
 		return fmt.Errorf("--quiet and --verbose cannot be used together")
 	}
@@ -263,6 +274,9 @@ func validateCmd(args []string) error {
 		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
+	if fs.NArg() > 0 {
+		return unexpectedArgsError(fs.Args())
+	}
 
 	var wf *Workflow
 	wf, err = loadWorkflowFunc(*workflowFile)
@@ -305,6 +319,9 @@ func visualizeCmd(args []string) error {
 		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
+	if fs.NArg() > 0 {
+		return unexpectedArgsError(fs.Args())
+	}
 
 	var wf *Workflow
 	wf, err = loadWorkflowFunc(*workflowFile)
@@ -320,6 +337,15 @@ func printVersion() {
 	fmt.Fprintf(os.Stdout, "talos %s\n", version)
 	fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
 	fmt.Fprintf(os.Stdout, "built: %s\n", date)
+}
+
+// unexpectedArgsError reports unsupported positional arguments for commands
+// that are intentionally flag-only.
+func unexpectedArgsError(args []string) error {
+	if len(args) == 1 {
+		return fmt.Errorf("unexpected argument %q", args[0])
+	}
+	return fmt.Errorf("unexpected arguments: %s", strings.Join(args, ", "))
 }
 
 // printRootUsage writes top-level command help to the given stream.
