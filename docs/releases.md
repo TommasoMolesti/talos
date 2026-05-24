@@ -33,6 +33,8 @@ done
 
 The release workflow also validates and dry-runs the bundled examples before building artifacts.
 
+Before creating a `v1.0.0` release candidate, complete the [v1 validation plan](v1-validation.md) against real projects.
+
 ## Create The Release
 
 Create and push a version tag:
