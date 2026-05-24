@@ -8,6 +8,8 @@ Run the local checks:
 
 ```bash
 gofmt -l .
+sh -n scripts/install.sh
+sh -n scripts/uninstall.sh
 go vet ./...
 go test ./...
 ```

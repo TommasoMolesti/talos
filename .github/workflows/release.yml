@@ -33,6 +33,11 @@ jobs:
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
 
+      - name: Check shell scripts
+        run: |
+          sh -n scripts/install.sh
+          sh -n scripts/uninstall.sh
+
       - name: Run vet
         run: go vet ./...
 
