@@ -27,7 +27,7 @@ tasks:
     command: "go build -o talos ."
 ```
 
-Task names must be unique. The task name is used by `depends_on`, `--target`, dry-run output, and execution summaries.
+Task names must be unique. The task name is used by `depends_on`, `--target`, dry-run output, and execution summaries. Duplicate task names are rejected during schema validation instead of silently overwriting earlier task definitions.
 
 Every task must define a non-empty `command`. Talos validates this before dry-run or execution.
 
@@ -67,7 +67,7 @@ Default fields:
 
 For `v1.x`, Talos treats the fields listed above as the stable workflow schema. Patch and minor releases may fix bugs, improve diagnostics, and add compatible behavior, but they should not remove these fields or change their meaning.
 
-Talos rejects unsupported top-level, `defaults`, and task fields with a file, line, and column error. This keeps typos such as `depend_on` from silently producing a different execution plan.
+Talos rejects unsupported and duplicate top-level, `defaults`, and task fields with a file, line, and column error. It also rejects duplicate task names. This keeps typos such as `depend_on`, or repeated keys that YAML parsers might otherwise overwrite, from silently producing a different execution plan.
 
 Workflow files should not rely on undocumented fields, task map ordering, exact human-readable colors or symbols, or shell behavior that is specific to a machine unless the workflow explicitly configures that shell.
 

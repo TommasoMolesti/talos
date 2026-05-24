@@ -1227,6 +1227,28 @@ func TestLoadWorkflow_RejectsUnknownTopLevelField(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsDuplicateTopLevelField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-top-level.yaml")
+	var data string = "tasks:\n  first:\n    command: \"echo first\"\ntasks:\n  second:\n    command: \"echo second\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate top-level field error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate top-level field \"tasks\"") {
+		t.Fatalf("expected duplicate top-level field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:1") {
+		t.Fatalf("expected duplicate top-level field location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsUnknownDefaultField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "unknown-default.yaml")
@@ -1249,6 +1271,50 @@ func TestLoadWorkflow_RejectsUnknownDefaultField(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsDuplicateDefaultField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-default.yaml")
+	var data string = "defaults:\n  timeout: 30\n  timeout: 60\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate default field error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate field \"timeout\" in defaults") {
+		t.Fatalf("expected duplicate default field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":3:3") {
+		t.Fatalf("expected duplicate default field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsDuplicateTaskName(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-task-name.yaml")
+	var data string = "tasks:\n  demo:\n    command: \"echo first\"\n  demo:\n    command: \"echo second\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate task name error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate task \"demo\"") {
+		t.Fatalf("expected duplicate task name error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:3") {
+		t.Fatalf("expected duplicate task name location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsUnknownTaskField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "unknown-task-field.yaml")
@@ -1268,5 +1334,27 @@ func TestLoadWorkflow_RejectsUnknownTaskField(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":4:5") {
 		t.Fatalf("expected unknown task field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsDuplicateTaskField(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-task-field.yaml")
+	var data string = "tasks:\n  demo:\n    command: \"echo first\"\n    command: \"echo second\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate task field error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate field \"command\" in task \"demo\"") {
+		t.Fatalf("expected duplicate task field error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:5") {
+		t.Fatalf("expected duplicate task field location, got %v", err)
 	}
 }

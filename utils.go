@@ -180,10 +180,15 @@ func validateWorkflowSchema(root *yaml.Node, path string) error {
 		"shell":       true,
 		"timeout":     true,
 	}
+	var seenTopLevel map[string]bool = make(map[string]bool)
 
 	for i := 0; i+1 < len(topLevel.Content); i += 2 {
 		var key *yaml.Node = topLevel.Content[i]
 		var value *yaml.Node = topLevel.Content[i+1]
+		if seenTopLevel[key.Value] {
+			return schemaError(path, nodeLocation(key), "duplicate top-level field %q", key.Value)
+		}
+		seenTopLevel[key.Value] = true
 		if !topLevelFields[key.Value] {
 			return schemaError(path, nodeLocation(key), "unsupported top-level field %q", key.Value)
 		}
@@ -209,9 +214,14 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 	if tasks == nil || tasks.Kind != yaml.MappingNode {
 		return nil
 	}
+	var seenTasks map[string]bool = make(map[string]bool)
 	for i := 0; i+1 < len(tasks.Content); i += 2 {
 		var taskName *yaml.Node = tasks.Content[i]
 		var taskConfig *yaml.Node = tasks.Content[i+1]
+		if seenTasks[taskName.Value] {
+			return schemaError(path, nodeLocation(taskName), "duplicate task %q", taskName.Value)
+		}
+		seenTasks[taskName.Value] = true
 		var err error = validateMappingFields(path, fmt.Sprintf("task %q", taskName.Value), taskConfig, allowed)
 		if err != nil {
 			return err
@@ -225,8 +235,13 @@ func validateMappingFields(path string, label string, node *yaml.Node, allowed m
 	if node == nil || node.Kind != yaml.MappingNode {
 		return nil
 	}
+	var seen map[string]bool = make(map[string]bool)
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		var key *yaml.Node = node.Content[i]
+		if seen[key.Value] {
+			return schemaError(path, nodeLocation(key), "duplicate field %q in %s", key.Value, label)
+		}
+		seen[key.Value] = true
 		if !allowed[key.Value] {
 			return schemaError(path, nodeLocation(key), "unsupported field %q in %s", key.Value, label)
 		}
