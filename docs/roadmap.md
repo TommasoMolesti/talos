@@ -23,8 +23,7 @@ Current status:
 
 Pre-RC work:
 
-- Complete the [v1 validation plan](v1-validation.md) for Go, Python, Docker, and monorepo projects.
-- Re-run the Python validation with a Python 3.12 interpreter.
+- Complete the [v1 validation plan](v1-validation.md) for Docker and monorepo projects.
 - Keep recording real-project results in [v1 Validation Plan](v1-validation.md).
 
 Release-candidate work:
