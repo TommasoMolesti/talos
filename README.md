@@ -89,6 +89,7 @@ Talos `v1.x` treats the documented workflow fields as its stable schema and reje
 ```bash
 talos init                         # create a starter talos.yaml
 talos run                          # run talos.yaml
+talos run --file ./workflow.yaml    # run a custom workflow file
 talos run --dry-run                # print the execution plan
 talos run --target test            # run one task and its dependencies
 talos run --max-concurrency 2      # limit parallel tasks

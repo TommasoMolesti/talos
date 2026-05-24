@@ -29,6 +29,13 @@ Overwrite an existing file:
 talos init --force
 ```
 
+Flags:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--file` | `talos.yaml` | Path to write the starter workflow. |
+| `--force` | `false` | Overwrite an existing workflow file. |
+
 ## `talos run`
 
 Run a workflow.
@@ -87,6 +94,18 @@ talos run --summary json
 
 Shell selection is configured in the workflow file with `defaults.shell` or task-level `shell`, not with a run flag. See [Workflow Configuration](workflows.md#shell).
 
+Flags:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--file` | `talos.yaml` | Path to the workflow file. |
+| `--dry-run` | `false` | Print the execution plan without running commands. |
+| `--target` | empty | Run only the specified task and its dependencies. |
+| `--max-concurrency` | `0` | Maximum number of concurrent tasks. `0` means unlimited. |
+| `--quiet` | `false` | Suppress live task output and print only the final summary. |
+| `--verbose` | `false` | Print task execution context before each task runs. |
+| `--summary` | `human` | Summary output format: `human` or `json`. |
+
 ## `talos validate`
 
 Validate a workflow without running commands.
@@ -102,6 +121,12 @@ talos validate --file ./workflows/dev.yaml
 ```
 
 Validation checks YAML parsing, required task commands, task configuration, missing dependencies, duplicate dependencies, and dependency cycles.
+
+Flags:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--file` | `talos.yaml` | Path to the workflow file. |
 
 ## `talos visualize`
 
@@ -127,6 +152,12 @@ graph TD
     install --> lint
     install --> test
 ```
+
+Flags:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--file` | `talos.yaml` | Path to the workflow file. |
 
 ## `talos version`
 
