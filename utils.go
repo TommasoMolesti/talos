@@ -200,6 +200,10 @@ func validateWorkflowSchema(root *yaml.Node, path string) error {
 			if err != nil {
 				return err
 			}
+			err = validateDefaultFieldTypes(path, value)
+			if err != nil {
+				return err
+			}
 		}
 		if key.Value == "tasks" {
 			if value.Kind != yaml.MappingNode {
@@ -238,7 +242,7 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 		if err != nil {
 			return err
 		}
-		err = validateDependencyNames(path, taskName.Value, taskConfig)
+		err = validateTaskFieldTypes(path, taskName.Value, taskConfig)
 		if err != nil {
 			return err
 		}
@@ -246,21 +250,101 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 	return nil
 }
 
-// validateDependencyNames rejects blank dependency names before YAML decoding.
-func validateDependencyNames(path string, taskName string, taskConfig *yaml.Node) error {
-	var deps *yaml.Node = mappingValue(taskConfig, "depends_on")
-	if deps == nil {
-		return nil
+// validateDefaultFieldTypes rejects invalid default field value types before YAML decoding.
+func validateDefaultFieldTypes(path string, defaults *yaml.Node) error {
+	for i := 0; i+1 < len(defaults.Content); i += 2 {
+		var key *yaml.Node = defaults.Content[i]
+		var value *yaml.Node = defaults.Content[i+1]
+		switch key.Value {
+		case "cwd", "shell":
+			if !isStringNode(value) {
+				return schemaError(path, nodeLocation(value), "%s in defaults must be a string", key.Value)
+			}
+		case "retries", "timeout":
+			if !isIntNode(value) {
+				return schemaError(path, nodeLocation(value), "%s in defaults must be an integer", key.Value)
+			}
+		case "env":
+			var err error = validateEnvMapping(path, "defaults", value)
+			if err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
+
+// validateTaskFieldTypes rejects invalid task field value types before YAML decoding.
+func validateTaskFieldTypes(path string, taskName string, taskConfig *yaml.Node) error {
+	for i := 0; i+1 < len(taskConfig.Content); i += 2 {
+		var key *yaml.Node = taskConfig.Content[i]
+		var value *yaml.Node = taskConfig.Content[i+1]
+		switch key.Value {
+		case "command", "cwd", "description", "shell":
+			if !isStringNode(value) {
+				return schemaError(path, nodeLocation(value), "%s in task %q must be a string", key.Value, taskName)
+			}
+		case "retries", "timeout":
+			if !isIntNode(value) {
+				return schemaError(path, nodeLocation(value), "%s in task %q must be an integer", key.Value, taskName)
+			}
+		case "env":
+			var err error = validateEnvMapping(path, fmt.Sprintf("task %q", taskName), value)
+			if err != nil {
+				return err
+			}
+		case "depends_on":
+			var err error = validateDependencyList(path, taskName, value)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// validateDependencyList rejects invalid dependency lists before YAML decoding.
+func validateDependencyList(path string, taskName string, deps *yaml.Node) error {
 	if deps.Kind != yaml.SequenceNode {
 		return schemaError(path, nodeLocation(deps), "depends_on in task %q must be a list", taskName)
 	}
 	for _, dep := range deps.Content {
+		if !isStringNode(dep) {
+			return schemaError(path, nodeLocation(dep), "dependency in task %q must be a string", taskName)
+		}
 		if strings.TrimSpace(dep.Value) == "" {
 			return schemaError(path, nodeLocation(dep), "task %s dependency name is required", taskName)
 		}
 	}
 	return nil
+}
+
+// validateEnvMapping rejects invalid env maps before YAML decoding.
+func validateEnvMapping(path string, label string, env *yaml.Node) error {
+	if env.Kind != yaml.MappingNode {
+		return schemaError(path, nodeLocation(env), "env in %s must be a mapping", label)
+	}
+	for i := 0; i+1 < len(env.Content); i += 2 {
+		var key *yaml.Node = env.Content[i]
+		var value *yaml.Node = env.Content[i+1]
+		if !isStringNode(key) {
+			return schemaError(path, nodeLocation(key), "env key in %s must be a string", label)
+		}
+		if !isStringNode(value) {
+			return schemaError(path, nodeLocation(value), "env value for %q in %s must be a string", key.Value, label)
+		}
+	}
+	return nil
+}
+
+// isStringNode reports whether a YAML node is an explicit or implicit string.
+func isStringNode(node *yaml.Node) bool {
+	return node != nil && node.Kind == yaml.ScalarNode && node.ShortTag() == "!!str"
+}
+
+// isIntNode reports whether a YAML node is an integer scalar.
+func isIntNode(node *yaml.Node) bool {
+	return node != nil && node.Kind == yaml.ScalarNode && node.ShortTag() == "!!int"
 }
 
 // validateMappingFields rejects unsupported keys from one YAML mapping.

@@ -6,6 +6,8 @@ Each workflow has a `tasks` map. Each task defines one shell command and can dep
 
 Top-level `defaults`, `tasks`, and each task definition must be YAML mappings. `depends_on` must be a list.
 
+String fields such as `command`, `description`, `cwd`, `shell`, environment keys, environment values, and dependency names must be YAML strings. `retries` and `timeout` must be YAML integers.
+
 ## Minimal Workflow
 
 ```yaml

@@ -1337,6 +1337,28 @@ func TestLoadWorkflow_RejectsNonMappingDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsStringDefaultTimeout(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "string-default-timeout.yaml")
+	var data string = "defaults:\n  timeout: \"30\"\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected default timeout type error")
+	}
+
+	if !strings.Contains(err.Error(), "timeout in defaults must be an integer") {
+		t.Fatalf("expected default timeout type error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":2:12") {
+		t.Fatalf("expected default timeout type location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsDuplicateDefaultField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "duplicate-default.yaml")
@@ -1447,6 +1469,72 @@ func TestLoadWorkflow_RejectsNonMappingTask(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsNonStringCommand(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-string-command.yaml")
+	var data string = "tasks:\n  demo:\n    command: 123\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-string command error")
+	}
+
+	if !strings.Contains(err.Error(), "command in task \"demo\" must be a string") {
+		t.Fatalf("expected non-string command error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":3:14") {
+		t.Fatalf("expected non-string command location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonMappingTaskEnv(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-mapping-env.yaml")
+	var data string = "tasks:\n  demo:\n    command: \"echo demo\"\n    env: nope\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-mapping env error")
+	}
+
+	if !strings.Contains(err.Error(), "env in task \"demo\" must be a mapping") {
+		t.Fatalf("expected non-mapping env error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:10") {
+		t.Fatalf("expected non-mapping env location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonStringEnvValue(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-string-env-value.yaml")
+	var data string = "tasks:\n  demo:\n    command: \"echo demo\"\n    env:\n      PORT: 3000\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-string env value error")
+	}
+
+	if !strings.Contains(err.Error(), "env value for \"PORT\" in task \"demo\" must be a string") {
+		t.Fatalf("expected non-string env value error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":5:13") {
+		t.Fatalf("expected non-string env value location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsUnknownTaskField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "unknown-task-field.yaml")
@@ -1532,5 +1620,27 @@ func TestLoadWorkflow_RejectsNonListDependsOn(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":4:17") {
 		t.Fatalf("expected non-list depends_on location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonStringDependency(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-string-dependency.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build ./...\"\n    depends_on: [123]\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-string dependency error")
+	}
+
+	if !strings.Contains(err.Error(), "dependency in task \"build\" must be a string") {
+		t.Fatalf("expected non-string dependency error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:18") {
+		t.Fatalf("expected non-string dependency location, got %v", err)
 	}
 }
