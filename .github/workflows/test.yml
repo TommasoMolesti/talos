@@ -30,3 +30,14 @@ jobs:
 
       - name: Run tests
         run: go test ./...
+
+      - name: Build local binary
+        run: go build -trimpath -o talos .
+
+      - name: Validate bundled examples
+        run: |
+          for file in examples/*.yaml; do
+            ./talos validate --file "$file"
+            ./talos run --file "$file" --dry-run
+          done
+          ./talos visualize --file examples/monorepo.yaml
