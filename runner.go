@@ -1,13 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -76,18 +77,51 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 	cmd.Dir = taskDir(task)
 	cmd.Env = taskEnv(task.Env)
 
-	var output []byte
 	var err error
-	output, err = cmd.CombinedOutput()
+	var stdout io.ReadCloser
+	stdout, err = cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	var stderr io.ReadCloser
+	stderr, err = cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
 
-	var lines []string = strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if line != "" {
-			PrintTaskOutputLine(task.Name, line)
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	var outputErrs chan error = make(chan error, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go streamTaskOutput(task.Name, stdout, outputErrs, &wg)
+	go streamTaskOutput(task.Name, stderr, outputErrs, &wg)
+
+	var waitErr error = cmd.Wait()
+	wg.Wait()
+	close(outputErrs)
+
+	for outputErr := range outputErrs {
+		if outputErr != nil && waitErr == nil {
+			waitErr = outputErr
 		}
 	}
 
-	return err
+	return waitErr
+}
+
+// streamTaskOutput prints command output as lines become available.
+func streamTaskOutput(name string, reader io.Reader, errs chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	var scanner *bufio.Scanner = bufio.NewScanner(reader)
+	for scanner.Scan() {
+		PrintTaskOutputLine(name, scanner.Text())
+	}
+	errs <- scanner.Err()
 }
 
 // taskShell returns the shell executable a task command should run through.

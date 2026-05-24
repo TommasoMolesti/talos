@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -889,6 +890,69 @@ func TestRunTask_UsesTaskWorkingDirAndEnv(t *testing.T) {
 	if !strings.Contains(output, "[demo] enabled") {
 		t.Fatalf("expected task output to include env var, got %q", output)
 	}
+}
+
+func TestRunTask_StreamsOutputBeforeCommandExits(t *testing.T) {
+	var task *Task = &Task{
+		Name:    "demo",
+		Command: "printf 'ready\\n'; sleep 0.2",
+	}
+
+	var orig *os.File = os.Stdout
+	var r *os.File
+	var w *os.File
+	var err error
+	r, w, err = os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = w
+	defer func() {
+		os.Stdout = orig
+		_ = r.Close()
+	}()
+
+	var lines chan string = make(chan string, 8)
+	var readDone chan struct{} = make(chan struct{})
+	go func() {
+		var scanner *bufio.Scanner = bufio.NewScanner(r)
+		for scanner.Scan() {
+			lines <- scanner.Text()
+		}
+		close(lines)
+		close(readDone)
+	}()
+
+	var done chan error = make(chan error, 1)
+	go func() {
+		done <- runTask(context.Background(), task)
+		_ = w.Close()
+	}()
+
+	var firstLine string
+	select {
+	case firstLine = <-lines:
+		if !strings.Contains(firstLine, "[demo] ready") {
+			t.Fatalf("expected streamed ready line, got %q", firstLine)
+		}
+	case err = <-done:
+		if err != nil {
+			t.Fatalf("unexpected task error: %v", err)
+		}
+		t.Fatal("task exited before output was observed")
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("timed out waiting for streamed output")
+	}
+
+	select {
+	case err = <-done:
+		if err != nil {
+			t.Fatalf("unexpected task error: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("task did not finish")
+	}
+	<-readDone
 }
 
 func TestRunTask_UsesConfiguredShell(t *testing.T) {
