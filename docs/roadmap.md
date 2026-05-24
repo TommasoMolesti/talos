@@ -22,16 +22,26 @@ Current status:
 - CI and release workflows run formatting, shell-script syntax checks, vet, tests, and bundled example checks.
 - Release documentation uses version placeholders until a real release candidate is ready.
 
-Pre-RC work:
+What remains for `v1.0.0`:
 
-- Complete the [v1 validation plan](v1-validation.md) for real Docker and monorepo workflows.
-- Keep recording real-project results in [v1 Validation Plan](v1-validation.md).
+1. Finish real-project validation.
+   - Complete the [v1 validation plan](v1-validation.md) for one real Docker workflow.
+   - Complete the [v1 validation plan](v1-validation.md) for one real monorepo workflow.
+   - Record the exact project, commit, workflow file, commands run, result, and notes in [v1 Validation Plan](v1-validation.md).
+2. Fix only validation-blocking issues.
+   - If Docker or monorepo validation exposes a Talos bug, fix it with focused tests.
+   - If validation exposes confusing behavior that is already correct, improve the relevant command, workflow, or internals docs.
+   - Avoid new features unless a real validation workflow cannot be represented with the existing v1 schema.
+3. Prepare the release candidate.
+   - Build release binaries from a clean tree with `v1.0.0` metadata and verify `talos version`.
+   - Run the full release-candidate checklist below.
+   - Review generated release artifacts before tagging.
 
-Release-candidate work:
+Possible improvements after the blockers, if time is worth spending:
 
-- Build release binaries from a clean tree with `v1.0.0` metadata and verify `talos version`.
-- Run the full release-candidate checklist below.
-- Review the generated release artifacts before tagging.
+- Tighten wording in README, command docs, workflow docs, and internals docs where validation shows ambiguity.
+- Add narrowly scoped tests for any behavior that feels important but is only manually verified today.
+- Keep examples realistic and useful as templates, but do not turn the repository into sample application fixtures.
 
 Tag-time work:
 
@@ -49,6 +59,8 @@ Done when:
 Release-candidate checklist:
 
 - `gofmt -l .`
+- `sh -n scripts/install.sh`
+- `sh -n scripts/uninstall.sh`
 - `go vet ./...`
 - `go test ./...`
 - `talos validate --file examples/go.yaml`
