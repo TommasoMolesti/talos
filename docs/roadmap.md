@@ -19,7 +19,7 @@ Current status:
 - Execution semantics docs have been checked against the implementation and tests.
 - Bundled examples validate and dry-run successfully.
 - Command help, README command summaries, command docs, workflow docs, examples, and release docs describe the same CLI surface.
-- CI and release workflows run formatting, vet, tests, and bundled example checks.
+- CI and release workflows run formatting, shell-script syntax checks, vet, tests, and bundled example checks.
 - Release documentation uses version placeholders until a real release candidate is ready.
 
 Pre-RC work:
