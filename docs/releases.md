@@ -12,6 +12,8 @@ go vet ./...
 go test ./...
 ```
 
+The release workflow runs these checks again before building release artifacts.
+
 Confirm the version output works with release metadata:
 
 ```bash
@@ -28,6 +30,8 @@ for file in examples/*.yaml; do
   ./talos run --file "$file" --dry-run
 done
 ```
+
+The release workflow also validates and dry-runs the bundled examples before building artifacts.
 
 ## Create The Release
 
