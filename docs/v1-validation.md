@@ -82,4 +82,4 @@ Record the results before creating a release candidate.
 | Docker | pending |  |  |  | pending | Needs a real Docker workflow to validate; do not use an artificial fixture for this row. |
 | Monorepo | pending |  |  |  | pending | Needs a real monorepo workflow to validate; do not use an artificial fixture for this row. |
 
-The release candidate is ready only after each category has a passing result or a documented, intentional exclusion.
+The release candidate is ready only after each category has a `pass` result or a documented, intentional exclusion. Do not create a release candidate while any row is `pending`, `blocked`, or failing.

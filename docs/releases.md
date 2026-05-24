@@ -33,7 +33,7 @@ done
 
 The release workflow also validates and dry-runs the bundled examples before building artifacts.
 
-Before creating a `v1.0.0` release candidate, complete the [v1 validation plan](v1-validation.md) against real projects.
+Before creating a `v1.0.0` release candidate, complete the [v1 validation plan](v1-validation.md) against real projects. Every validation row must be `pass` or have a documented, intentional exclusion; do not tag with `pending`, `blocked`, or failing rows.
 
 ## Create The Release
 

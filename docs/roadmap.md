@@ -42,6 +42,7 @@ Done when:
 
 - The project can support `v1.x` workflows without breaking changes.
 - The README, docs, examples, and CLI help all describe the same behavior.
+- The v1 validation log has no `pending`, `blocked`, or failing rows.
 - Release artifacts and checksums are verified from a clean tag.
 
 Release-candidate checklist:
