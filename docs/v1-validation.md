@@ -79,7 +79,7 @@ Record the results before creating a release candidate.
 | Go | talos | 4a15de0 | `/private/tmp/talos-v1-go.yaml` | `validate`; `run --dry-run`; `visualize`; `run --target test`; `run --target build` | pass | Real Go CLI project; formatting, vet, tests, and build passed through Talos. |
 | Node.js | cassa-sagra | c2f1832 | `/private/tmp/talos-v1-node.yaml` | `validate`; `run --dry-run`; `visualize`; `run --target lint`; `run --target lint --quiet`; `run --target lint --verbose`; `run --target lint --summary json` | pass | Real Vite/React project; `npm run lint` passed through Talos. |
 | Python | shepherd | 99ad6fb | `/private/tmp/talos-v1-python.yaml` | `validate`; `run --dry-run`; `visualize`; `run --target imports` | pass | Real Python project; project metadata and imports passed through Talos with the project `.venv` Python 3.13 interpreter. |
-| Docker |  |  |  |  |  |  |
-| Monorepo |  |  |  |  |  |  |
+| Docker | pending |  |  |  | pending | Needs a real Docker workflow to validate; do not use an artificial fixture for this row. |
+| Monorepo | pending |  |  |  | pending | Needs a real monorepo workflow to validate; do not use an artificial fixture for this row. |
 
 The release candidate is ready only after each category has a passing result or a documented, intentional exclusion.

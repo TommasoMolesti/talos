@@ -23,7 +23,7 @@ Current status:
 
 Pre-RC work:
 
-- Complete the [v1 validation plan](v1-validation.md) for Docker and monorepo projects.
+- Complete the [v1 validation plan](v1-validation.md) for real Docker and monorepo workflows.
 - Keep recording real-project results in [v1 Validation Plan](v1-validation.md).
 
 Release-candidate work:
