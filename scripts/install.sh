@@ -12,17 +12,22 @@ if [ -z "${GOBIN}" ]; then
 	GOBIN="$(go env GOPATH)/bin"
 fi
 
-echo "Talos installed to ${GOBIN}/talos"
+BINARY="${GOBIN}/talos"
 
-if command -v talos >/dev/null 2>&1; then
-	talos version
+echo "Talos installed to ${BINARY}"
+
+if [ -x "${BINARY}" ]; then
+	"${BINARY}" version
+fi
+
+if [ "$(command -v talos 2>/dev/null || true)" = "${BINARY}" ]; then
 	exit 0
 fi
 
-echo "Talos is installed, but ${GOBIN} is not in your PATH."
+echo "Talos is installed, but ${BINARY} is not the talos found first in your PATH."
 echo "Add it for this shell with:"
-echo "  export PATH=\"\$PATH:${GOBIN}\""
+echo "  export PATH=\"${GOBIN}:\$PATH\""
 echo
 echo "For zsh, persist it with:"
-echo "  echo 'export PATH=\"\$PATH:${GOBIN}\"' >> ~/.zshrc"
+echo "  echo 'export PATH=\"${GOBIN}:\$PATH\"' >> ~/.zshrc"
 echo "  source ~/.zshrc"
