@@ -1,6 +1,6 @@
 # Release Process
 
-Talos publishes repeatable GitHub releases from version tags. A tag like `vX.Y.Z` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release.
+Talos publishes repeatable GitHub releases from version tags. A tag like `vX.Y.Z` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release. Release tags must match `vX.Y.Z`.
 
 ## Before Tagging
 
