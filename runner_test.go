@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -957,15 +958,22 @@ func TestRunTask_StreamsOutputBeforeCommandExits(t *testing.T) {
 
 func TestRunTask_StreamsLongOutputLine(t *testing.T) {
 	var longLine string = strings.Repeat("x", 128*1024)
+	var tempDir string = t.TempDir()
+	var outputPath string = filepath.Join(tempDir, "long-output.txt")
+	var err error = os.WriteFile(outputPath, []byte(longLine+"\n"), 0o644)
+	if err != nil {
+		t.Fatalf("write long output file: %v", err)
+	}
+
 	var task *Task = &Task{
 		Name:    "demo",
-		Command: "printf '%s\\n' \"" + longLine + "\"",
+		Command: "cat " + strconv.Quote(outputPath),
 	}
 
 	var stdout *bytes.Buffer
 	var restore func()
 	stdout, restore = captureStdout(t)
-	var err error = runTask(context.Background(), task)
+	err = runTask(context.Background(), task)
 	restore()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
