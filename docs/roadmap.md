@@ -23,8 +23,9 @@ Current status:
 
 Pre-RC work:
 
-- Test Talos against real Go, Node.js, Python, Docker, and monorepo projects using the [v1 validation plan](v1-validation.md).
-- Record the real-project results in [v1 Validation Plan](v1-validation.md).
+- Complete the [v1 validation plan](v1-validation.md) for Go, Python, Docker, and monorepo projects.
+- Re-run the Python validation with a Python 3.12 interpreter.
+- Keep recording real-project results in [v1 Validation Plan](v1-validation.md).
 
 Release-candidate work:
 

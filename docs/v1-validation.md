@@ -77,8 +77,8 @@ Record the results before creating a release candidate.
 | Category | Project | Commit | Workflow file | Commands run | Result | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | Go |  |  |  |  |  |  |
-| Node.js |  |  |  |  |  |  |
-| Python |  |  |  |  |  |  |
+| Node.js | cassa-sagra | c2f1832 | `/private/tmp/talos-v1-node.yaml` | `validate`; `run --dry-run`; `visualize`; `run --target lint`; `run --target lint --quiet`; `run --target lint --verbose`; `run --target lint --summary json` | pass | Real Vite/React project; `npm run lint` passed through Talos. |
+| Python | shepherd | 99ad6fb | `/private/tmp/talos-v1-python.yaml` | `validate`; `run --dry-run`; `visualize`; `run --target imports` | blocked | Talos behavior was correct, but local `python3` is 3.9.6 and the project uses Python 3.12 `match` syntax. Re-run with a Python 3.12 interpreter. |
 | Docker |  |  |  |  |  |  |
 | Monorepo |  |  |  |  |  |  |
 
