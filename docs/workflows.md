@@ -8,6 +8,8 @@ Top-level `defaults`, `tasks`, and each task definition must be YAML mappings. `
 
 String fields such as `command`, `description`, `cwd`, `shell`, environment keys, environment values, and dependency names must be YAML strings. `retries` and `timeout` must be YAML integers.
 
+Environment variable names must be unique within each `env` map.
+
 ## Minimal Workflow
 
 ```yaml

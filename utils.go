@@ -324,12 +324,17 @@ func validateEnvMapping(path string, label string, env *yaml.Node) error {
 	if env.Kind != yaml.MappingNode {
 		return schemaError(path, nodeLocation(env), "env in %s must be a mapping", label)
 	}
+	var seen map[string]bool = make(map[string]bool)
 	for i := 0; i+1 < len(env.Content); i += 2 {
 		var key *yaml.Node = env.Content[i]
 		var value *yaml.Node = env.Content[i+1]
 		if !isStringNode(key) {
 			return schemaError(path, nodeLocation(key), "env key in %s must be a string", label)
 		}
+		if seen[key.Value] {
+			return schemaError(path, nodeLocation(key), "duplicate env key %q in %s", key.Value, label)
+		}
+		seen[key.Value] = true
 		if !isStringNode(value) {
 			return schemaError(path, nodeLocation(value), "env value for %q in %s must be a string", key.Value, label)
 		}

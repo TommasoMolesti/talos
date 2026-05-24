@@ -1359,6 +1359,28 @@ func TestLoadWorkflow_RejectsStringDefaultTimeout(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsDuplicateDefaultEnvKey(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-default-env.yaml")
+	var data string = "defaults:\n  env:\n    APP_ENV: \"dev\"\n    APP_ENV: \"test\"\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate default env key error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate env key \"APP_ENV\" in defaults") {
+		t.Fatalf("expected duplicate default env key error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:5") {
+		t.Fatalf("expected duplicate default env key location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsDuplicateDefaultField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "duplicate-default.yaml")
@@ -1532,6 +1554,28 @@ func TestLoadWorkflow_RejectsNonStringEnvValue(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":5:13") {
 		t.Fatalf("expected non-string env value location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsDuplicateTaskEnvKey(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "duplicate-task-env.yaml")
+	var data string = "tasks:\n  demo:\n    command: \"echo demo\"\n    env:\n      APP_ENV: \"dev\"\n      APP_ENV: \"test\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected duplicate task env key error")
+	}
+
+	if !strings.Contains(err.Error(), "duplicate env key \"APP_ENV\" in task \"demo\"") {
+		t.Fatalf("expected duplicate task env key error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":6:7") {
+		t.Fatalf("expected duplicate task env key location, got %v", err)
 	}
 }
 
