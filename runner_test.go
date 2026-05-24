@@ -955,6 +955,28 @@ func TestRunTask_StreamsOutputBeforeCommandExits(t *testing.T) {
 	<-readDone
 }
 
+func TestRunTask_StreamsLongOutputLine(t *testing.T) {
+	var longLine string = strings.Repeat("x", 128*1024)
+	var task *Task = &Task{
+		Name:    "demo",
+		Command: "printf '%s\\n' \"" + longLine + "\"",
+	}
+
+	var stdout *bytes.Buffer
+	var restore func()
+	stdout, restore = captureStdout(t)
+	var err error = runTask(context.Background(), task)
+	restore()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var output string = stdout.String()
+	if !strings.Contains(output, "[demo] "+longLine) {
+		t.Fatalf("expected long output line to be printed, got length %d", len(output))
+	}
+}
+
 func TestRunTask_UsesConfiguredShell(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var shellPath string = tempDir + "/fake-shell"

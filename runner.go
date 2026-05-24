@@ -100,8 +100,8 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 	go streamTaskOutput(task.Name, stdout, outputErrs, &wg)
 	go streamTaskOutput(task.Name, stderr, outputErrs, &wg)
 
-	var waitErr error = cmd.Wait()
 	wg.Wait()
+	var waitErr error = cmd.Wait()
 	close(outputErrs)
 
 	for outputErr := range outputErrs {
@@ -117,11 +117,37 @@ var runTask func(context.Context, *Task) error = func(ctx context.Context, task 
 func streamTaskOutput(name string, reader io.Reader, errs chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var scanner *bufio.Scanner = bufio.NewScanner(reader)
-	for scanner.Scan() {
-		PrintTaskOutputLine(name, scanner.Text())
+	var buffered *bufio.Reader = bufio.NewReader(reader)
+	for {
+		var line string
+		var err error
+		line, err = buffered.ReadString('\n')
+		if line != "" {
+			line = trimLineEnding(line)
+			if line != "" {
+				PrintTaskOutputLine(name, line)
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				errs <- nil
+				return
+			}
+			errs <- err
+			return
+		}
 	}
-	errs <- scanner.Err()
+}
+
+// trimLineEnding removes one line ending while preserving other output bytes.
+func trimLineEnding(line string) string {
+	if len(line) > 0 && line[len(line)-1] == '\n' {
+		line = line[:len(line)-1]
+	}
+	if len(line) > 0 && line[len(line)-1] == '\r' {
+		line = line[:len(line)-1]
+	}
+	return line
 }
 
 // taskShell returns the shell executable a task command should run through.
