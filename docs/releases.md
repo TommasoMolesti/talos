@@ -29,9 +29,10 @@ for file in examples/*.yaml; do
   ./talos validate --file "$file"
   ./talos run --file "$file" --dry-run
 done
+./talos visualize --file examples/monorepo.yaml
 ```
 
-The release workflow also validates and dry-runs the bundled examples before building artifacts.
+The release workflow also validates and dry-runs the bundled examples, then checks monorepo visualization, before building artifacts.
 
 Before creating a `v1.0.0` release candidate, complete the [v1 validation plan](v1-validation.md) against real projects. Every validation row must be `pass` or have a documented, intentional exclusion; do not tag with `pending`, `blocked`, or failing rows.
 
