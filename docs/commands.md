@@ -122,7 +122,7 @@ Validate a custom workflow file:
 talos validate --file ./workflows/dev.yaml
 ```
 
-Validation checks YAML parsing, duplicate mapping keys, required task commands, task configuration, missing dependencies, duplicate dependencies, and dependency cycles.
+Validation checks YAML parsing, unsupported fields, malformed workflow shapes, invalid field types, duplicate mapping keys, required task commands, task configuration, missing dependencies, duplicate dependencies, and dependency cycles.
 
 Flags:
 

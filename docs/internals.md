@@ -50,7 +50,7 @@ Timeouts use a task-scoped context derived from the workflow context. If the tas
 
 ## Output Modes
 
-Default run output is human-readable. Talos prints task lifecycle events as tasks start, retry, finish, fail, time out, or cancel. Command output is prefixed with the task name so parallel logs remain attributable.
+Default run output is human-readable. Talos prints task lifecycle events as tasks start, retry, finish, fail, time out, or cancel. Command output is streamed line by line and prefixed with the task name so parallel logs remain attributable.
 
 `--quiet` suppresses live lifecycle and command output while keeping the final human summary and final done or failed line.
 

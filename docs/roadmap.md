@@ -13,8 +13,9 @@ Goal: stabilize the workflow schema and CLI behavior.
 Current status:
 
 - The stable workflow schema is documented in [Workflow Configuration](workflows.md).
-- Unsupported workflow fields and duplicate workflow keys are rejected with source locations.
-- Core execution behavior is covered by tests, including dependency validation, deterministic constrained scheduling, target runs, quiet and verbose output, JSON summaries, retries, timeouts, cancellation, and duplicate dependency rejection.
+- Unsupported workflow fields, malformed workflow shapes, invalid workflow field types, duplicate workflow keys, blank identifiers, and duplicate environment keys are rejected with source locations.
+- Commands reject unexpected positional arguments.
+- Core execution behavior is covered by tests, including dependency validation, deterministic constrained scheduling, target runs, live output streaming, quiet and verbose output, JSON summaries, retries, timeouts, cancellation, and duplicate dependency rejection.
 - Execution semantics docs have been checked against the implementation and tests.
 - Bundled examples validate and dry-run successfully.
 - Command help, README command summaries, command docs, workflow docs, examples, and release docs describe the same CLI surface.
@@ -72,6 +73,7 @@ Remaining finish-line checks:
 
 - Execution semantics are documented and covered by tests.
 - README, examples, command docs, and internals docs agree with the implementation.
+- Docker and monorepo validation rows are completed or explicitly excluded.
 - Release artifacts can be built and verified from a clean tag.
 
 After `v1.0.0`, Talos should prefer bug fixes, documentation improvements, compatibility updates, and small refinements over new feature areas.
