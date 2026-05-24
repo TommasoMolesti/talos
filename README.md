@@ -1,43 +1,74 @@
 # Talos
 
-Talos is a lightweight workflow runner for local development. It reads a YAML file, builds a dependency graph, and runs independent tasks in parallel on your machine.
+Talos is a small local workflow runner for developers. It reads a YAML file, builds a dependency graph, and runs independent tasks in parallel on your machine.
 
-Use it when a project needs repeatable commands such as setup, lint, test, build, migrations, or local service orchestration without adding a server, queue, or external platform.
+Use it for repeatable project commands such as setup, lint, test, build, migrations, or local service checks without introducing a CI server or a larger task framework.
 
-## Why Talos
+## Name
 
 In Greek mythology, **Talos** was a giant bronze automaton—the first "robot"—created to protect the island of Crete. Like its namesake, this tool is a self-operating, local-first engine. It doesn't rely on external clouds or complex clusters; it is an autonomous guardian of your workflows, running entirely on your machine to execute tasks with mechanical precision and speed.
 
-## Features
+## Why It Exists
 
-- **Local-first:** runs as a single CLI binary.
-- **Dependency-aware:** tasks run only after their dependencies finish.
-- **Parallel by default:** independent tasks run concurrently.
-- **Safe to preview:** `--dry-run` prints the execution plan before commands run.
-- **Practical controls:** per-task `shell`, `cwd`, `env`, `retries`, and `timeout`.
-- **Easy to document:** `visualize` exports the workflow DAG as Mermaid.
+Many projects grow a pile of shell scripts, npm scripts, Makefile targets, and README instructions that are easy to run in the wrong order.
+
+Talos keeps that workflow in one file:
+
+- tasks declare their dependencies;
+- independent tasks run in parallel;
+- `--dry-run` shows the execution plan before anything runs;
+- failures, retries, timeouts, and skipped tasks are summarized clearly.
 
 ## Quick Start
 
-Install Talos from the latest release with the install script:
+Install from the latest release:
 
 ```bash
 sh -c "$(curl -sfL https://raw.githubusercontent.com/TommasoMolesti/talos/main/scripts/install.sh)"
 ```
 
-Or download a release binary from the GitHub Releases page and place it on your `PATH`.
-
-If you already use Go, install from source with:
+Or, if you use Go:
 
 ```bash
 go install github.com/TommasoMolesti/talos@latest
 ```
 
-Create a workflow:
+Create a starter workflow:
 
 ```bash
 talos init
 ```
+
+Preview and run it:
+
+```bash
+talos run --dry-run
+talos run
+```
+
+## Example
+
+Talos looks for `talos.yaml` in the current directory.
+
+```yaml
+tasks:
+  install:
+    command: "npm install"
+
+  lint:
+    command: "npm run lint"
+    depends_on: ["install"]
+
+  test:
+    command: "npm test"
+    depends_on: ["install"]
+
+  build:
+    command: "npm run build"
+    depends_on: ["lint", "test"]
+```
+
+In this workflow, `install` runs first. Then `lint` and `test` run in parallel. `build` runs after both checks pass.
 
 Preview the plan:
 
@@ -45,67 +76,36 @@ Preview the plan:
 talos run --dry-run
 ```
 
-Run it:
-
-```bash
-talos run
-```
-
-## Workflow Example
-
-Talos looks for `talos.yaml` in the current directory by default.
-
-```yaml
-defaults:
-  timeout: 120
-
-tasks:
-  install:
-    description: "Install dependencies"
-    command: "npm install"
-
-  lint:
-    description: "Run lint checks"
-    command: "npm run lint"
-    depends_on: ["install"]
-
-  test:
-    description: "Run tests"
-    command: "npm test"
-    depends_on: ["install"]
-
-  build:
-    description: "Build the app"
-    command: "npm run build"
-    depends_on: ["lint", "test"]
-```
-
-In this workflow, `install` runs first. Then `lint` and `test` run in parallel. `build` runs only after both finish.
-
-Talos `v1.x` treats the documented workflow fields as its stable schema and rejects unsupported fields, malformed shapes, invalid field types, duplicate keys, and blank identifiers with source locations, so configuration mistakes fail early. See [Workflow Configuration](docs/workflows.md) for the full schema and compatibility notes.
-
 ## Commands
 
 ```bash
-talos init                         # create a starter talos.yaml
-talos run                          # run talos.yaml
-talos run --file ./workflow.yaml    # run a custom workflow file
-talos run --dry-run                # print the execution plan
-talos run --target test            # run one task and its dependencies
-talos run --max-concurrency 2      # limit parallel tasks
-talos run --quiet                  # suppress live task output
-talos run --verbose                # print task execution context
-talos run --summary json           # print a JSON run summary
-talos validate                     # check workflow syntax and dependencies
-talos visualize                    # print the DAG as Mermaid
-talos version                      # print version metadata
+talos init
+talos run
+talos run --dry-run
+talos run --target test
+talos validate
+talos visualize
+talos version
 ```
 
-See [Command Reference](docs/commands.md) for flags and examples.
+See [Command Reference](docs/commands.md) for every flag and example.
+
+## What This Project Demonstrates
+
+Talos is intentionally small, but it includes the kind of engineering details that matter in a production CLI:
+
+- YAML schema validation with useful source locations.
+- Dependency graph validation, including missing dependencies and cycles.
+- Deterministic dry-run plans.
+- Concurrent task scheduling with cancellation on failure.
+- Live prefixed output so parallel logs remain readable.
+- Per-task `cwd`, `shell`, `env`, `retries`, and `timeout`.
+- Human and JSON summaries.
+- Automated tests and release builds for Linux, macOS, and Windows.
 
 ## Examples
 
-The [examples](examples) directory includes starter workflows for:
+The [examples](examples) directory includes workflows for:
 
 - [Go](examples/go.yaml)
 - [Node.js](examples/node.yaml)
@@ -114,74 +114,36 @@ The [examples](examples) directory includes starter workflows for:
 - [Monorepo](examples/monorepo.yaml)
 - [Shell configuration](examples/shell.yaml)
 
-Preview any example:
+Try one with:
 
 ```bash
 talos run --file examples/go.yaml --dry-run
 ```
 
-The monorepo example shows a more complete local release path with backend checks, frontend checks, smoke tests, workspace packaging, task-local directories, environment overrides, retries, and timeouts:
-
-```bash
-talos run --file examples/monorepo.yaml --dry-run
-```
-
-To see explicit shell selection, preview the shell configuration example:
-
-```bash
-talos run --file examples/shell.yaml --dry-run
-```
-
-## When To Use Talos
-
-Use Talos when a repository has a handful of repeatable local tasks with real dependencies: setup before tests, lint and tests in parallel, build after checks, or service startup before smoke tests.
-
-Compared with `make`, Talos gives you YAML configuration, built-in DAG validation, deterministic dry-runs, task summaries, timeouts, retries, and cross-platform release binaries without relying on Makefile syntax.
-
-Compared with npm scripts, Talos works across Go, Python, Docker, shell, and monorepo tasks instead of living inside one package manager. It is useful when one workflow needs to coordinate several tools.
-
-Compared with CI-only pipelines, Talos runs the same dependency-aware workflow on a developer machine before a commit. It does not replace CI, hosted runners, secrets management, or deployment approvals.
-
-## Project Highlights
-
-Talos is intentionally small, but it demonstrates production-oriented engineering choices:
-
-- DAG validation before execution, including missing dependencies and cycles.
-- Deterministic execution plans for predictable dry runs and tests.
-- Concurrent scheduling with live task output, cancellation on failure, and readable run summaries.
-- Per-task shell, retries, timeouts, environment overrides, and working directories.
-- User-facing CLI behavior covered by tests.
-- Automated release builds for Linux, macOS, and Windows.
-
 ## Documentation
 
-- [Contributing](CONTRIBUTING.md)
 - [Workflow Configuration](docs/workflows.md)
 - [Command Reference](docs/commands.md)
 - [Workflow Patterns](docs/patterns.md)
 - [Internals](docs/internals.md)
-- [Roadmap](docs/roadmap.md)
 - [Release Process](docs/releases.md)
+- [Roadmap](docs/roadmap.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Development
 
-Run the local checks:
+Run the checks:
 
 ```bash
 gofmt -l .
+sh -n scripts/install.sh
+sh -n scripts/uninstall.sh
 go vet ./...
 go test ./...
 ```
 
-Build the binary:
+Build locally:
 
 ```bash
 go build -o talos .
-```
-
-Build with release metadata:
-
-```bash
-VERSION=vX.Y.Z
-go build -ldflags "-X main.version=${VERSION} -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
 ```
