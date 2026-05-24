@@ -161,7 +161,6 @@ Talos is intentionally small, but it demonstrates production-oriented engineerin
 - [Workflow Patterns](docs/patterns.md)
 - [Internals](docs/internals.md)
 - [Roadmap](docs/roadmap.md)
-- [v1 Validation Plan](docs/v1-validation.md)
 - [Release Process](docs/releases.md)
 
 ## Development

@@ -24,24 +24,16 @@ Current status:
 
 What remains for `v1.0.0`:
 
-1. Finish real-project validation.
-   - Complete the [v1 validation plan](v1-validation.md) for one real Docker workflow.
-   - Complete the [v1 validation plan](v1-validation.md) for one real monorepo workflow.
-   - Record the exact project, commit, workflow file, commands run, result, and notes in [v1 Validation Plan](v1-validation.md).
-2. Fix only validation-blocking issues.
-   - If Docker or monorepo validation exposes a Talos bug, fix it with focused tests.
-   - If validation exposes confusing behavior that is already correct, improve the relevant command, workflow, or internals docs.
-   - Avoid new features unless a real validation workflow cannot be represented with the existing v1 schema.
+1. Finish release readiness.
+   - Run the full release-candidate checklist below from a clean tree.
+   - Fix only bugs, broken docs, or release-blocking issues found by those checks.
+   - Avoid new features unless they are necessary to preserve the documented v1 behavior.
+2. Finalize documentation.
+   - Check that README, command docs, workflow docs, internals docs, examples, and CLI help describe the same behavior.
+   - Tighten wording only where it prevents user confusion for the stable v1 surface.
 3. Prepare the release candidate.
    - Build release binaries from a clean tree with `v1.0.0` metadata and verify `talos version`.
-   - Run the full release-candidate checklist below.
    - Review generated release artifacts before tagging.
-
-Possible improvements after the blockers, if time is worth spending:
-
-- Tighten wording in README, command docs, workflow docs, and internals docs where validation shows ambiguity.
-- Add narrowly scoped tests for any behavior that feels important but is only manually verified today.
-- Keep examples realistic and useful as templates, but do not turn the repository into sample application fixtures.
 
 Tag-time work:
 
@@ -53,7 +45,6 @@ Done when:
 
 - The project can support `v1.x` workflows without breaking changes.
 - The README, docs, examples, and CLI help all describe the same behavior.
-- The v1 validation log has no `pending`, `blocked`, or failing rows.
 - Release artifacts and checksums are verified from a clean tag.
 
 Release-candidate checklist:
@@ -85,7 +76,6 @@ Remaining finish-line checks:
 
 - Execution semantics are documented and covered by tests.
 - README, examples, command docs, and internals docs agree with the implementation.
-- Docker and monorepo validation rows are completed or explicitly excluded.
 - Release artifacts can be built and verified from a clean tag.
 
 After `v1.0.0`, Talos should prefer bug fixes, documentation improvements, compatibility updates, and small refinements over new feature areas.
