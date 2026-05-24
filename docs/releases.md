@@ -1,6 +1,6 @@
 # Release Process
 
-Talos publishes repeatable GitHub releases from version tags. A tag like `v0.5.0` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release.
+Talos publishes repeatable GitHub releases from version tags. A tag like `vX.Y.Z` triggers the release workflow, builds Linux, macOS, and Windows binaries, generates `checksums.txt`, and attaches all assets to the GitHub Release.
 
 ## Before Tagging
 
@@ -15,8 +15,18 @@ go test ./...
 Confirm the version output works with release metadata:
 
 ```bash
-go build -ldflags "-X main.version=0.5.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
+VERSION=vX.Y.Z
+go build -ldflags "-X main.version=${VERSION} -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o talos .
 ./talos version
+```
+
+Validate the bundled example workflows:
+
+```bash
+for file in examples/*.yaml; do
+  ./talos validate --file "$file"
+  ./talos run --file "$file" --dry-run
+done
 ```
 
 ## Create The Release
@@ -24,8 +34,8 @@ go build -ldflags "-X main.version=0.5.0 -X main.commit=$(git rev-parse --short 
 Create and push a version tag:
 
 ```bash
-git tag v0.5.0
-git push origin v0.5.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 The release workflow publishes:
@@ -37,4 +47,24 @@ The release workflow publishes:
 
 ## After Publishing
 
-Check the GitHub Release page and confirm that all expected assets are attached. Then verify that `go install github.com/TommasoMolesti/talos@latest` resolves to the new tag.
+Check the GitHub Release page and confirm that all expected assets are attached.
+
+Download `checksums.txt` and the expected binary for your platform, then verify the checksum locally:
+
+```bash
+sha256sum --check checksums.txt
+```
+
+On macOS, use:
+
+```bash
+shasum -a 256 -c checksums.txt
+```
+
+Run the downloaded binary and confirm it reports the release tag:
+
+```bash
+./talos version
+```
+
+Then verify that `go install github.com/TommasoMolesti/talos@latest` resolves to the new tag.

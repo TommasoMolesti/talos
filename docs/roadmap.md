@@ -6,20 +6,62 @@ The roadmap is intentionally narrow. Talos should become easier to understand be
 
 Patch releases should be reserved for bug fixes, documentation corrections, and small compatibility updates.
 
-## `v1.0.0`: Stable Release
+## Toward `v1.0.0`: Stable Release
 
 Goal: stabilize the workflow schema and CLI behavior.
 
-Planned work:
+Current status:
 
-- Test the release candidate against real Go, Node.js, Python, Docker, and monorepo workflows.
-- Review all examples and docs against the final `v1.0.0` behavior.
+- The stable workflow schema is documented in [Workflow Configuration](workflows.md).
+- Unsupported workflow fields are rejected with source locations.
+- Core execution behavior is covered by tests, including dependency validation, deterministic constrained scheduling, target runs, quiet and verbose output, JSON summaries, retries, timeouts, cancellation, and duplicate dependency rejection.
+- Bundled examples validate and dry-run successfully.
+- Release documentation uses version placeholders until a real release candidate is ready.
+
+Pre-RC work:
+
+- Review command help, README command summaries, workflow docs, examples, and release docs against the same CLI surface.
+- Re-check execution semantics docs against tests and implementation.
+- Audit the release workflow against the release docs.
+- Test Talos against real Go, Node.js, Python, Docker, and monorepo projects, not only the bundled examples.
+- Decide whether any remaining CLI or workflow schema behavior should change before the `v1.x` compatibility line is drawn.
+
+Release-candidate work:
+
+- Build release binaries from a clean tree with `v1.0.0` metadata and verify `talos version`.
+- Run the full release-candidate checklist below.
+- Review the generated release artifacts before tagging.
+
+Tag-time work:
+
+- Create the `v1.0.0` tag only after the release candidate passes.
+- Confirm generated release checksums match the published artifacts.
+- Verify `go install github.com/TommasoMolesti/talos@latest` resolves to `v1.0.0`.
 
 Done when:
 
 - The project can support `v1.x` workflows without breaking changes.
 - The README, docs, examples, and CLI help all describe the same behavior.
 - Release artifacts and checksums are verified from a clean tag.
+
+Release-candidate checklist:
+
+- `gofmt -l .`
+- `go vet ./...`
+- `go test ./...`
+- `talos validate --file examples/go.yaml`
+- `talos validate --file examples/node.yaml`
+- `talos validate --file examples/python.yaml`
+- `talos validate --file examples/docker.yaml`
+- `talos validate --file examples/monorepo.yaml`
+- `talos validate --file examples/shell.yaml`
+- `talos run --file examples/go.yaml --dry-run`
+- `talos run --file examples/node.yaml --dry-run`
+- `talos run --file examples/python.yaml --dry-run`
+- `talos run --file examples/docker.yaml --dry-run`
+- `talos run --file examples/monorepo.yaml --dry-run`
+- `talos run --file examples/shell.yaml --dry-run`
+- `talos visualize --file examples/monorepo.yaml`
 
 ## Project Finish Line
 
