@@ -15,6 +15,7 @@ Current status:
 - The stable workflow schema is documented in [Workflow Configuration](workflows.md).
 - Unsupported workflow fields are rejected with source locations.
 - Core execution behavior is covered by tests, including dependency validation, deterministic constrained scheduling, target runs, quiet and verbose output, JSON summaries, retries, timeouts, cancellation, and duplicate dependency rejection.
+- Execution semantics docs have been checked against the implementation and tests.
 - Bundled examples validate and dry-run successfully.
 - Command help, README command summaries, command docs, workflow docs, examples, and release docs describe the same CLI surface.
 - The release workflow runs formatting, vet, tests, and bundled example checks before building artifacts.
@@ -22,7 +23,6 @@ Current status:
 
 Pre-RC work:
 
-- Re-check execution semantics docs against tests and implementation.
 - Test Talos against real Go, Node.js, Python, Docker, and monorepo projects, not only the bundled examples.
 - Decide whether any remaining CLI or workflow schema behavior should change before the `v1.x` compatibility line is drawn.
 

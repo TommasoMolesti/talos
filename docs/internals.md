@@ -11,6 +11,7 @@ Talos treats each workflow as a Directed Acyclic Graph.
 - A task can run when all of its dependencies have completed successfully.
 - Independent tasks can run in parallel.
 - Ready tasks are queued by task name before scheduling. This keeps constrained runs, such as `--max-concurrency 1`, predictable while still allowing parallel output to interleave when multiple tasks run at once.
+- Dry-runs use deterministic stages. Each stage contains tasks whose dependencies were satisfied by earlier stages, and task names are sorted within the stage.
 
 For this workflow:
 
@@ -25,7 +26,7 @@ Talos runs `A`, then runs `B` and `C` in parallel, then runs `D`.
 
 ## Main Components
 
-- `loadWorkflow` parses YAML and applies defaults.
+- `loadWorkflow` validates the YAML schema, parses tasks, records source locations, resolves workflow-relative paths, and applies defaults.
 - `validateWorkflow` checks task configuration.
 - `validateExecutionOrder` rejects missing dependencies and cycles.
 - `buildExecutionPlan` creates the deterministic stage-by-stage dry-run plan.
@@ -55,7 +56,7 @@ Default run output is human-readable. Talos prints task lifecycle events as task
 
 `--verbose` keeps normal live output and adds task execution context before each task runs: shell, working directory when configured, retry count, timeout, and command. It does not print environment variable values.
 
-`--summary json` suppresses live human output and writes only a machine-readable final summary to stdout. The JSON summary includes overall success, total duration, status counts, and per-task status, attempts, duration, timeout, description, and error details.
+`--summary json` suppresses live human output and writes only a machine-readable final summary to stdout. The JSON summary includes overall success, total duration, status counts, and per-task status, attempts, duration, timeout, description, and error details. Tasks are sorted by task name.
 
 ## Command Execution
 
@@ -71,7 +72,7 @@ Workflow defaults and task-level configuration can set a different shell executa
 <shell> -c "<task command>"
 ```
 
-Talos applies task-specific working directories and environment variables before starting the command. Output emitted by the command is printed with a stable task prefix:
+Talos applies task-specific working directories and environment variables before starting the command. Relative working directories are resolved from the directory containing the workflow file. Output emitted by the command is printed with a stable task prefix:
 
 ```text
 [test] ok ./...

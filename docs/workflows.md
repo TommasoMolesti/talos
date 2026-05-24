@@ -47,7 +47,7 @@ Task fields:
 | `command` | Yes | Shell command to run. |
 | `description` | No | Human-readable task label for dry-run and summary output. |
 | `depends_on` | No | List of task names that must succeed first. |
-| `cwd` | No | Workflow-relative or absolute working directory. |
+| `cwd` | No | Workflow-file-relative or absolute working directory. |
 | `shell` | No | Shell executable used as `<shell> -c "<command>"`. |
 | `env` | No | Environment variable overrides. |
 | `retries` | No | Number of retry attempts after the first failure. |
@@ -57,7 +57,7 @@ Default fields:
 
 | Field | Description |
 | --- | --- |
-| `cwd` | Shared working directory. |
+| `cwd` | Shared workflow-file-relative or absolute working directory. |
 | `shell` | Shared shell executable. |
 | `env` | Shared environment variables. |
 | `retries` | Shared retry count. |
@@ -111,7 +111,7 @@ tasks:
     depends_on: ["lint", "test"]
 ```
 
-Here, `lint` and `test` run in parallel after `install`. If you limit concurrency, ready tasks are started in task-name order.
+Here, `lint` and `test` run in parallel after `install`. Dry-run stages are printed in task-name order. During execution, ready tasks are queued by task name; if you limit concurrency, they are started from that queue in a predictable order.
 
 ## Descriptions
 
@@ -134,7 +134,7 @@ During execution, command output is prefixed with the task name so concurrent ru
 
 ## Working Directory
 
-Use `cwd` when a command must run from a specific directory.
+Use `cwd` when a command must run from a specific directory. Relative paths are resolved from the directory containing the workflow file, not from the process working directory.
 
 ```yaml
 tasks:
@@ -227,18 +227,19 @@ During a failed run:
 - Talos stops scheduling new tasks after the first failure.
 - Tasks that never started are marked as skipped in the final summary.
 - Dependents of a failed, timed-out, canceled, or skipped task do not run.
+- The command returns the first non-cancellation task error.
 
 Retries are handled before a task is considered failed. For example, `retries: 2` allows one initial attempt and two retry attempts. If the final attempt fails, the workflow enters fail-fast cancellation.
 
-Timeouts stop the current task and fail the workflow immediately. Timed-out tasks are reported separately from ordinary command failures.
+Timeouts stop the current task and cancel the workflow. Timed-out tasks are reported separately from ordinary command failures.
 
 When a task fails, the final summary includes the failed task name and the command error returned by the shell or process.
 
-Use `talos run --quiet` to suppress live task output while keeping the final summary.
+Use `talos run --quiet` to suppress live task output while keeping the final summary and final done or failed line.
 
 Use `talos run --verbose` to print each task's shell, working directory, retry count, timeout, and command before it runs. Verbose output does not print environment variable values.
 
-Use `talos run --summary json` when scripts need a machine-readable final summary. JSON summary mode suppresses live task output and prints only the summary JSON to stdout.
+Use `talos run --summary json` when scripts need a machine-readable final summary. JSON summary mode suppresses live task output and prints only the summary JSON to stdout. Tasks are listed by task name for stable parsing.
 
 ## Defaults
 
