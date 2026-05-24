@@ -193,12 +193,18 @@ func validateWorkflowSchema(root *yaml.Node, path string) error {
 			return schemaError(path, nodeLocation(key), "unsupported top-level field %q", key.Value)
 		}
 		if key.Value == "defaults" {
+			if value.Kind != yaml.MappingNode {
+				return schemaError(path, nodeLocation(value), "defaults must be a mapping")
+			}
 			var err error = validateMappingFields(path, "defaults", value, defaultFields)
 			if err != nil {
 				return err
 			}
 		}
 		if key.Value == "tasks" {
+			if value.Kind != yaml.MappingNode {
+				return schemaError(path, nodeLocation(value), "tasks must be a mapping")
+			}
 			var err error = validateTaskSchema(path, value, taskFields)
 			if err != nil {
 				return err
@@ -221,6 +227,9 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 		if strings.TrimSpace(taskName.Value) == "" {
 			return schemaError(path, nodeLocation(taskName), "task name is required")
 		}
+		if taskConfig.Kind != yaml.MappingNode {
+			return schemaError(path, nodeLocation(taskConfig), "task %q must be a mapping", taskName.Value)
+		}
 		if seenTasks[taskName.Value] {
 			return schemaError(path, nodeLocation(taskName), "duplicate task %q", taskName.Value)
 		}
@@ -240,8 +249,11 @@ func validateTaskSchema(path string, tasks *yaml.Node, allowed map[string]bool) 
 // validateDependencyNames rejects blank dependency names before YAML decoding.
 func validateDependencyNames(path string, taskName string, taskConfig *yaml.Node) error {
 	var deps *yaml.Node = mappingValue(taskConfig, "depends_on")
-	if deps == nil || deps.Kind != yaml.SequenceNode {
+	if deps == nil {
 		return nil
+	}
+	if deps.Kind != yaml.SequenceNode {
+		return schemaError(path, nodeLocation(deps), "depends_on in task %q must be a list", taskName)
 	}
 	for _, dep := range deps.Content {
 		if strings.TrimSpace(dep.Value) == "" {

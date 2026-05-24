@@ -4,6 +4,8 @@ Talos workflows are YAML files. By default, Talos reads `talos.yaml` from the cu
 
 Each workflow has a `tasks` map. Each task defines one shell command and can depend on other tasks.
 
+Top-level `defaults`, `tasks`, and each task definition must be YAML mappings. `depends_on` must be a list.
+
 ## Minimal Workflow
 
 ```yaml

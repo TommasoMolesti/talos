@@ -1315,6 +1315,28 @@ func TestLoadWorkflow_RejectsUnknownDefaultField(t *testing.T) {
 	}
 }
 
+func TestLoadWorkflow_RejectsNonMappingDefaults(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-mapping-defaults.yaml")
+	var data string = "defaults: nope\ntasks:\n  demo:\n    command: \"echo demo\"\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-mapping defaults error")
+	}
+
+	if !strings.Contains(err.Error(), "defaults must be a mapping") {
+		t.Fatalf("expected non-mapping defaults error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":1:11") {
+		t.Fatalf("expected non-mapping defaults location, got %v", err)
+	}
+}
+
 func TestLoadWorkflow_RejectsDuplicateDefaultField(t *testing.T) {
 	var tempDir string = t.TempDir()
 	var workflowPath string = filepath.Join(tempDir, "duplicate-default.yaml")
@@ -1334,6 +1356,28 @@ func TestLoadWorkflow_RejectsDuplicateDefaultField(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":3:3") {
 		t.Fatalf("expected duplicate default field location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonMappingTasks(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-mapping-tasks.yaml")
+	var data string = "tasks: nope\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-mapping tasks error")
+	}
+
+	if !strings.Contains(err.Error(), "tasks must be a mapping") {
+		t.Fatalf("expected non-mapping tasks error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":1:8") {
+		t.Fatalf("expected non-mapping tasks location, got %v", err)
 	}
 }
 
@@ -1378,6 +1422,28 @@ func TestLoadWorkflow_RejectsBlankTaskName(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":2:3") {
 		t.Fatalf("expected blank task name location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonMappingTask(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-mapping-task.yaml")
+	var data string = "tasks:\n  demo: nope\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-mapping task error")
+	}
+
+	if !strings.Contains(err.Error(), "task \"demo\" must be a mapping") {
+		t.Fatalf("expected non-mapping task error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":2:9") {
+		t.Fatalf("expected non-mapping task location, got %v", err)
 	}
 }
 
@@ -1444,5 +1510,27 @@ func TestLoadWorkflow_RejectsBlankDependencyName(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), workflowPath+":4:18") {
 		t.Fatalf("expected blank dependency name location, got %v", err)
+	}
+}
+
+func TestLoadWorkflow_RejectsNonListDependsOn(t *testing.T) {
+	var tempDir string = t.TempDir()
+	var workflowPath string = filepath.Join(tempDir, "non-list-depends-on.yaml")
+	var data string = "tasks:\n  build:\n    command: \"go build ./...\"\n    depends_on: test\n"
+	var err error = os.WriteFile(workflowPath, []byte(data), 0o644)
+	if err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	_, err = loadWorkflow(workflowPath)
+	if err == nil {
+		t.Fatal("expected non-list depends_on error")
+	}
+
+	if !strings.Contains(err.Error(), "depends_on in task \"build\" must be a list") {
+		t.Fatalf("expected non-list depends_on error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), workflowPath+":4:17") {
+		t.Fatalf("expected non-list depends_on location, got %v", err)
 	}
 }
